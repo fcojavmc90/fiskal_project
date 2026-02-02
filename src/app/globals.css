@@ -1,0 +1,75 @@
+/* FISKAL OFFICIAL BRANDING CSS */
+:root {
+  --navy: #00283d;
+  --turquoise: #2eb1c2;
+  --orange: #f7931e;
+  --slate-50: #f8fafc;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--slate-50);
+  color: var(--navy);
+}
+
+.fiskal-navbar {
+  background-color: var(--navy);
+  border-bottom: 3px solid var(--turquoise);
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.fiskal-logo-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fiskal-logo-icon {
+  background-color: var(--turquoise);
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 1.5rem;
+  font-style: italic;
+}
+
+.fiskal-brand-name {
+  color: white;
+  font-weight: 800;
+  font-size: 1.5rem;
+  letter-spacing: -1px;
+}
+
+.fiskal-btn-primary {
+  background-color: var(--turquoise);
+  color: var(--navy);
+  padding: 10px 24px;
+  border-radius: 50px;
+  font-weight: bold;
+  text-decoration: none;
+  transition: 0.3s;
+}
+
+.fiskal-btn-primary:hover {
+  background-color: white;
+}
+
+.contact-alert {
+  background-color: var(--orange);
+  color: white;
+  padding: 8px;
+  text-align: center;
+  font-weight: bold;
+  font-size: 0.8rem;
+}

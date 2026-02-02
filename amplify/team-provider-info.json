@@ -1,0 +1,35 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-taxmvp-dev-91f6c-authRole",
+      "UnauthRoleArn": "arn:aws:iam::981914209110:role/amplify-taxmvp-dev-91f6c-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::981914209110:role/amplify-taxmvp-dev-91f6c-authRole",
+      "Region": "us-east-1",
+      "DeploymentBucketName": "amplify-taxmvp-dev-91f6c-deployment",
+      "UnauthRoleName": "amplify-taxmvp-dev-91f6c-unauthRole",
+      "StackName": "amplify-taxmvp-dev-91f6c",
+      "StackId": "arn:aws:cloudformation:us-east-1:981914209110:stack/amplify-taxmvp-dev-91f6c/cd096b60-e689-11f0-914c-0affe7517767",
+      "AmplifyAppId": "d2tjo9i2r3nhc2",
+      "AuthTriggerTemplateURL": "https://s3.amazonaws.com/amplify-taxmvp-dev-91f6c-deployment/amplify-cfn-templates/auth/auth-trigger-cloudformation-template.json"
+    },
+    "categories": {
+      "auth": {
+        "taxmvpfe99dd4f": {},
+        "userPoolGroups": {}
+      },
+      "api": {
+        "taxmvp": {}
+      },
+      "storage": {
+        "fiskaldocuments": {}
+      },
+      "function": {
+        "taxmvpfe99dd4fPostConfirmation": {
+          "GROUP": "CLIENT",
+          "deploymentBucketName": "amplify-taxmvp-dev-91f6c-deployment",
+          "s3Key": "amplify-builds/taxmvpfe99dd4fPostConfirmation-73475a67766555327376-build.zip"
+        }
+      }
+    }
+  }
+}

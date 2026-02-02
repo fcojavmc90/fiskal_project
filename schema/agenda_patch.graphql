@@ -1,0 +1,40 @@
+# ===== FISKAL MVP - PASO B (FIX): Amplify Transformer v1 =====
+# Tu proyecto usa Transformer v1, por eso:
+# - NO se puede usar @index
+# - Debe usarse @key
+#
+# Este bloque crea la tabla y el queryField:
+# - professionalAgendasByProfessionalId
+
+enum ProfessionalAgendaStatus {
+  AVAILABLE
+  PENDING
+  ACCEPTED
+  MOVED
+  REJECTED
+}
+
+type ProfessionalAgenda
+  @model
+  @auth(
+    rules: [
+      # Profesional: puede leer/escribir SOLO sus registros
+      # identityClaim:"sub" permite que ownerField use el "sub" del token
+      { allow: owner, ownerField: "professionalId", identityClaim: "sub", operations: [create, read, update, delete] }
+    ]
+  )
+  @key(
+    name: "byProfessionalId"
+    fields: ["professionalId", "date", "time"]
+    queryField: "professionalAgendasByProfessionalId"
+  ) {
+  id: ID!
+  professionalId: ID!  # sub del profesional (ownerField)
+  clientId: ID         # sub del cliente cuando reserve (PASO C)
+  date: String!        # YYYY-MM-DD
+  time: String!        # HH:mm
+  status: ProfessionalAgendaStatus!
+  meetingLink: String
+  createdAt: AWSDateTime
+  updatedAt: AWSDateTime
+}

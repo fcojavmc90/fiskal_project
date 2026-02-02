@@ -1,0 +1,13 @@
+{
+  "resourceName": "fiskaldocuments",
+  "policyUUID": "ec735b5c",
+  "bucketName": "fiskal-documents-private",
+  "storageAccess": "auth",
+  "guestAccess": [],
+  "authAccess": [
+    "CREATE_AND_UPDATE",
+    "READ",
+    "DELETE"
+  ],
+  "groupAccess": {}
+}

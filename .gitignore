@@ -1,0 +1,8 @@
+node_modules
+.next
+.env
+.env.local
+amplify/.config/local-*
+amplify/mock-data
+build
+dist

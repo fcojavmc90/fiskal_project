@@ -1,0 +1,36 @@
+# ===== FISKAL MVP - PASO B (FIX) =====
+# Corrige ProfessionalAgenda para Amplify Gen1 con @index en FIELD (como tu CaseDocument)
+# - Elimina @index en OBJECT (invalido)
+# - Elimina @key mal ubicado (invalido)
+# - Crea indice por professionalId con sortKeyFields ["date","time"]
+
+enum ProfessionalAgendaStatus {
+  AVAILABLE
+  PENDING
+  ACCEPTED
+  MOVED
+  REJECTED
+}
+
+type ProfessionalAgenda
+  @model
+  @auth(
+    rules: [
+      { allow: owner, ownerField: "professionalId", operations: [create, read, update, delete] }
+    ]
+  ) {
+  id: ID!
+  professionalId: ID!
+    @index(
+      name: "byProfessionalId"
+      queryField: "professionalAgendasByProfessionalId"
+      sortKeyFields: ["date", "time"]
+    )
+  clientId: ID
+  date: String!
+  time: String!
+  status: ProfessionalAgendaStatus!
+  meetingLink: String
+  createdAt: AWSDateTime
+  updatedAt: AWSDateTime
+}

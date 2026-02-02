@@ -1,0 +1,216 @@
+enum UserRole {
+  CLIENT
+  PRO
+}
+
+enum ProType {
+  TAX
+  LEGAL
+  OTHER
+}
+
+enum AppointmentStatus {
+  REQUESTED
+  ACCEPTED
+  REJECTED
+  RESCHEDULE_PROPOSED
+  CANCELLED
+  COMPLETED
+}
+
+enum CaseStatus {
+  AWAITING_PRO_SELECTION
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum DocStatus {
+  REQUESTED
+  UPLOADED
+  IN_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum PaymentType {
+  UNLOCK_150
+  SERVICE_50_FIRST
+  SERVICE_50_FINAL
+}
+
+type UserProfile
+  @model
+  @auth(rules: [{ allow: owner, ownerField: "owner", operations: [create, read, update] }]) {
+  id: ID!
+  owner: String!
+  role: UserRole!
+  email: AWSEmail
+  firstName: String
+  lastName: String
+}
+
+type ProfessionalProfile
+  @model
+  @auth(
+    rules: [
+      { allow: owner, ownerField: "owner", operations: [create, read, update] }
+      { allow: private, operations: [read] }
+    ]
+  ) {
+  id: ID!
+  owner: String!
+  proType: ProType!
+  displayName: String!
+  bio: String
+  ratingAvg: Float
+  ratingCount: Int
+  isActive: Boolean
+}
+
+type SurveyResponse
+  @model
+  @auth(rules: [{ allow: owner, ownerField: "owner", operations: [create, read, update] }]) {
+  id: ID!
+  owner: String!
+  answersJson: AWSJSON!
+}
+
+type Appointment
+  @model
+  @auth(
+    rules: [
+      { allow: owner, ownerField: "clientOwner", operations: [create, read] }
+      { allow: owner, ownerField: "proOwner", operations: [read, update] }
+    ]
+  ) {
+  id: ID!
+  clientOwner: String!
+  proOwner: String!
+  professionalId: ID!
+  requestedStart: AWSDateTime!
+  requestedEnd: AWSDateTime!
+  status: AppointmentStatus!
+  proposedStart: AWSDateTime
+  proposedEnd: AWSDateTime
+  notes: String
+  caseId: ID
+}
+
+type Case
+  @model
+  @auth(
+    rules: [
+      { allow: owner, ownerField: "clientOwner", operations: [create, read] }
+      { allow: owner, ownerField: "proOwner", operations: [read, update] }
+    ]
+  ) {
+  id: ID!
+  caseNumber: String!
+  clientOwner: String!
+  proOwner: String!
+  professionalId: ID!
+  appointmentId: ID!
+  status: CaseStatus!
+  servicePriceCents: Int
+  currency: String
+}
+
+type CaseDocument
+  @model
+  @auth(
+    rules: [
+      { allow: owner, ownerField: "clientOwner", operations: [create, read, update] }
+      { allow: owner, ownerField: "proOwner", operations: [read, update] }
+    ]
+  ) {
+  id: ID!
+  caseId: ID!
+    @index(
+      name: "byCase"
+      queryField: "caseDocumentsByCase"
+      sortKeyFields: ["createdAt"]
+    )
+  caseNumber: String!
+  clientOwner: String!
+  proOwner: String!
+  professionalId: ID!
+  title: String!
+  required: Boolean
+  status: DocStatus!
+  fileName: String
+  fileType: String
+  s3Key: String
+  uploadedAt: AWSDateTime
+  reviewNotes: String
+  createdAt: AWSDateTime
+}
+
+type Payment
+  @model
+  @auth(
+    rules: [
+      { allow: owner, ownerField: "clientOwner", operations: [create, read, update] }
+      { allow: owner, ownerField: "proOwner", operations: [read] }
+    ]
+  ) {
+  id: ID!
+  clientOwner: String!
+  proOwner: String
+  professionalId: ID
+  appointmentId: ID
+  caseId: ID
+  type: PaymentType!
+  amountCents: Int!
+  currency: String!
+  status: PaymentStatus!
+  squareCheckoutId: String
+  squarePaymentId: String
+}
+
+# ===== FISKAL MVP - PASO B: Agenda Profesional =====
+
+enum ProfessionalAgendaStatus {
+  AVAILABLE
+  PENDING
+  ACCEPTED
+  MOVED
+  REJECTED
+}
+
+type ProfessionalAgenda
+  @model
+  @auth(
+    rules: [
+      # Profesional: CRUD solo sus registros
+      { allow: owner, ownerField: "professionalId", operations: [create, read, update, delete] }
+
+      # Cliente (PASO C): habilitar cuando exista reserva/pago (por ahora comentado)
+      # { allow: owner, ownerField: "clientId", operations: [read, update] }
+    ]
+  ) {
+  id: ID!
+  professionalId: ID!
+    @index(
+      name: "byProfessionalId"
+      queryField: "professionalAgendasByProfessionalId"
+      sortKeyFields: ["date", "time"]
+    )
+  clientId: ID
+  date: String! # YYYY-MM-DD
+  time: String! # HH:mm
+  status: ProfessionalAgendaStatus!
+  meetingLink: String
+  createdAt: AWSDateTime
+  updatedAt: AWSDateTime
+}
+
+

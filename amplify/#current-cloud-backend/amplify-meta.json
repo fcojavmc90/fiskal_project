@@ -1,0 +1,174 @@
+{
+  "providers": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-taxmvp-dev-91f6c-authRole",
+      "UnauthRoleArn": "arn:aws:iam::981914209110:role/amplify-taxmvp-dev-91f6c-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::981914209110:role/amplify-taxmvp-dev-91f6c-authRole",
+      "Region": "us-east-1",
+      "DeploymentBucketName": "amplify-taxmvp-dev-91f6c-deployment",
+      "UnauthRoleName": "amplify-taxmvp-dev-91f6c-unauthRole",
+      "StackName": "amplify-taxmvp-dev-91f6c",
+      "StackId": "arn:aws:cloudformation:us-east-1:981914209110:stack/amplify-taxmvp-dev-91f6c/cd096b60-e689-11f0-914c-0affe7517767",
+      "AmplifyAppId": "d2tjo9i2r3nhc2",
+      "AuthTriggerTemplateURL": "https://s3.amazonaws.com/amplify-taxmvp-dev-91f6c-deployment/amplify-cfn-templates/auth/auth-trigger-cloudformation-template.json"
+    }
+  },
+  "auth": {
+    "taxmvpfe99dd4f": {
+      "service": "Cognito",
+      "providerPlugin": "awscloudformation",
+      "dependsOn": [
+        {
+          "category": "function",
+          "resourceName": "taxmvpfe99dd4fPostConfirmation",
+          "triggerProvider": "Cognito",
+          "attributes": [
+            "Arn",
+            "Name"
+          ]
+        }
+      ],
+      "customAuth": false,
+      "frontendAuthConfig": {
+        "socialProviders": [],
+        "usernameAttributes": [
+          "EMAIL"
+        ],
+        "signupAttributes": [
+          "EMAIL"
+        ],
+        "passwordProtectionSettings": {
+          "passwordPolicyMinLength": 8,
+          "passwordPolicyCharacters": []
+        },
+        "mfaConfiguration": "OFF",
+        "mfaTypes": [
+          "SMS"
+        ],
+        "verificationMechanisms": [
+          "EMAIL"
+        ]
+      },
+      "providerMetadata": {
+        "s3TemplateURL": "https://s3.amazonaws.com/amplify-taxmvp-dev-91f6c-deployment/amplify-cfn-templates/auth/taxmvpfe99dd4f-cloudformation-template.json",
+        "logicalId": "authtaxmvpfe99dd4f"
+      },
+      "lastPushTimeStamp": "2026-01-18T15:30:59.731Z",
+      "output": {
+        "UserPoolId": "us-east-1_E4seqSvW8",
+        "AppClientIDWeb": "17s77ojvm86cv1llq9092b5pia",
+        "AppClientID": "4svm0bjc7aroh3946pcr7ccr9a",
+        "IdentityPoolId": "us-east-1:33d4f7d8-4c50-4a6a-a3ae-13cb5f40dc5f",
+        "UserPoolArn": "arn:aws:cognito-idp:us-east-1:981914209110:userpool/us-east-1_E4seqSvW8",
+        "IdentityPoolName": "taxmvpfe99dd4f_identitypool_fe99dd4f__dev",
+        "UserPoolName": "taxmvpfe99dd4f_userpool_fe99dd4f"
+      },
+      "lastPushDirHash": "e1I6/H5HeSo6IF/CBlftJtbE+0c="
+    },
+    "userPoolGroups": {
+      "service": "Cognito-UserPool-Groups",
+      "providerPlugin": "awscloudformation",
+      "dependsOn": [
+        {
+          "category": "auth",
+          "resourceName": "taxmvpfe99dd4f",
+          "attributes": [
+            "UserPoolId",
+            "AppClientIDWeb",
+            "AppClientID",
+            "IdentityPoolId"
+          ]
+        }
+      ],
+      "lastPushTimeStamp": "2026-01-18T15:30:59.731Z",
+      "providerMetadata": {
+        "s3TemplateURL": "https://s3.amazonaws.com/amplify-taxmvp-dev-91f6c-deployment/amplify-cfn-templates/auth/userPoolGroups-cloudformation-template.json",
+        "logicalId": "authuserPoolGroups"
+      },
+      "output": {
+        "PROGroupRole": "arn:aws:iam::981914209110:role/us-east-1_E4seqSvW8-PROGroupRole",
+        "CLIENTGroupRole": "arn:aws:iam::981914209110:role/us-east-1_E4seqSvW8-CLIENTGroupRole"
+      },
+      "lastPushDirHash": "4ubk48XT2pOgEinlkExPm5DQ2Ng="
+    }
+  },
+  "api": {
+    "taxmvp": {
+      "service": "AppSync",
+      "providerPlugin": "awscloudformation",
+      "dependsOn": [
+        {
+          "category": "auth",
+          "resourceName": "taxmvpfe99dd4f",
+          "attributes": [
+            "UserPoolId"
+          ]
+        }
+      ],
+      "output": {
+        "authConfig": {
+          "defaultAuthentication": {
+            "authenticationType": "AMAZON_COGNITO_USER_POOLS",
+            "userPoolConfig": {
+              "userPoolId": "authtaxmvpfe99dd4f"
+            }
+          },
+          "additionalAuthenticationProviders": []
+        },
+        "GraphQLAPIIdOutput": "7enmmxv4szc6neavd3fpoz7rd4",
+        "GraphQLAPIEndpointOutput": "https://tsbg7rerqnddhjihr36ldyysly.appsync-api.us-east-1.amazonaws.com/graphql"
+      },
+      "providerMetadata": {
+        "s3TemplateURL": "https://s3.amazonaws.com/amplify-taxmvp-dev-91f6c-deployment/amplify-cfn-templates/api/cloudformation-template.json",
+        "logicalId": "apitaxmvp"
+      },
+      "lastPushTimeStamp": "2026-01-18T15:30:58.439Z",
+      "lastPushDirHash": "2HDAwlefKCHMxgQukCHTBdBP560="
+    }
+  },
+  "storage": {
+    "fiskaldocuments": {
+      "service": "S3",
+      "providerPlugin": "awscloudformation",
+      "dependsOn": [],
+      "lastPushTimeStamp": "2026-01-18T15:30:58.440Z",
+      "providerMetadata": {
+        "s3TemplateURL": "https://s3.amazonaws.com/amplify-taxmvp-dev-91f6c-deployment/amplify-cfn-templates/storage/cloudformation-template.json",
+        "logicalId": "storagefiskaldocuments"
+      },
+      "output": {
+        "BucketName": "fiskal-documents-private91f6c-dev",
+        "Region": "us-east-1"
+      },
+      "lastPushDirHash": "XwXK0xFrH6PqlzYokfHQyF78udQ="
+    }
+  },
+  "function": {
+    "taxmvpfe99dd4fPostConfirmation": {
+      "build": true,
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda",
+      "lastBuildTimeStamp": "2026-01-18T15:27:30.388Z",
+      "lastBuildType": "PROD",
+      "lastPackageTimeStamp": "2026-01-18T15:27:30.682Z",
+      "distZipFilename": "taxmvpfe99dd4fPostConfirmation-73475a67766555327376-build.zip",
+      "s3Bucket": {
+        "deploymentBucketName": "amplify-taxmvp-dev-91f6c-deployment",
+        "s3Key": "amplify-builds/taxmvpfe99dd4fPostConfirmation-73475a67766555327376-build.zip"
+      },
+      "providerMetadata": {
+        "s3TemplateURL": "https://s3.amazonaws.com/amplify-taxmvp-dev-91f6c-deployment/amplify-cfn-templates/function/taxmvpfe99dd4fPostConfirmation-cloudformation-template.json",
+        "logicalId": "functiontaxmvpfe99dd4fPostConfirmation"
+      },
+      "lastPushTimeStamp": "2026-01-18T15:30:59.731Z",
+      "output": {
+        "LambdaExecutionRoleArn": "arn:aws:iam::981914209110:role/taxmvpfe99dd4fPostConfirmation-dev",
+        "Region": "us-east-1",
+        "Arn": "arn:aws:lambda:us-east-1:981914209110:function:taxmvpfe99dd4fPostConfirmation-dev",
+        "Name": "taxmvpfe99dd4fPostConfirmation-dev",
+        "LambdaExecutionRole": "taxmvpfe99dd4fPostConfirmation-dev"
+      },
+      "lastPushDirHash": "EcoIvNhQSR4gKIoK/J8dN6eM4Ds="
+    }
+  }
+}
