@@ -2,9 +2,9 @@
 export const dynamic = 'force-dynamic';
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import dynamic from 'next/dynamic';
+import dynamicImport from 'next/dynamic';
 
-const SquarePayment = dynamic(() => import('../../components/SquarePayment'), { ssr: false });
+const SquarePayment = dynamicImport(() => import('../../components/SquarePayment'), { ssr: false });
 import { createPayment, listSurveyResponsesByOwner, updateSurveyResponse } from '../../lib/graphqlClient';
 import { PaymentStatus, PaymentType } from '../../API';
 import { getCurrentUser, fetchUserAttributes } from 'aws-amplify/auth';
