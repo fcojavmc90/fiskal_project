@@ -1,5 +1,7 @@
 node_modules
 .next
+*.zip
+.google_tokens.json
 .env
 .env.local
 amplify/.config/local-*
