@@ -6,7 +6,7 @@ export type AmplifyDependentResourcesAttributes = {
     }
   },
   "auth": {
-    "taxmvpfe99dd4f": {
+    "taxmvpd8e247c7d8e247c7": {
       "AppClientID": "string",
       "AppClientIDWeb": "string",
       "IdentityPoolId": "string",
@@ -21,6 +21,13 @@ export type AmplifyDependentResourcesAttributes = {
     }
   },
   "function": {
+    "taxmvpd8e247c7d8e247c7PostConfirmation": {
+      "Arn": "string",
+      "LambdaExecutionRole": "string",
+      "LambdaExecutionRoleArn": "string",
+      "Name": "string",
+      "Region": "string"
+    },
     "taxmvpfe99dd4fPostConfirmation": {
       "Arn": "string",
       "LambdaExecutionRole": "string",

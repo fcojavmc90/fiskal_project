@@ -1,0 +1,31 @@
+{
+  "aws_project_region": "us-east-1",
+  "aws_cognito_identity_pool_id": "us-east-1:b336e661-d569-43ab-98e4-496617ed9e7e",
+  "aws_cognito_region": "us-east-1",
+  "aws_user_pools_id": "us-east-1_6PgEd5O1w",
+  "aws_user_pools_web_client_id": "72pr0n98n4rf6cd27nvj2pv2cs",
+  "oauth": {},
+  "aws_cognito_username_attributes": [
+    "EMAIL"
+  ],
+  "aws_cognito_social_providers": [],
+  "aws_cognito_signup_attributes": [
+    "EMAIL"
+  ],
+  "aws_cognito_mfa_configuration": "OFF",
+  "aws_cognito_mfa_types": [
+    "SMS"
+  ],
+  "aws_cognito_password_protection_settings": {
+    "passwordPolicyMinLength": 8,
+    "passwordPolicyCharacters": []
+  },
+  "aws_cognito_verification_mechanisms": [
+    "EMAIL"
+  ],
+  "aws_appsync_graphqlEndpoint": "https://skhxsic2tbc73mu3bblnkevoqi.appsync-api.us-east-1.amazonaws.com/graphql",
+  "aws_appsync_region": "us-east-1",
+  "aws_appsync_authenticationType": "AMAZON_COGNITO_USER_POOLS",
+  "aws_user_files_s3_bucket": "fiskal-documents-private91f6c-dev",
+  "aws_user_files_s3_bucket_region": "us-east-1"
+}

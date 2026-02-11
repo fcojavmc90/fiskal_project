@@ -104,6 +104,8 @@ export const getSurveyResponse = /* GraphQL */ `query GetSurveyResponse($id: ID!
   getSurveyResponse(id: $id) {
     id
     owner
+    proOwner
+    professionalId
     answersJson
     createdAt
     updatedAt
@@ -123,6 +125,8 @@ export const listSurveyResponses = /* GraphQL */ `query ListSurveyResponses(
     items {
       id
       owner
+      proOwner
+      professionalId
       answersJson
       createdAt
       updatedAt
@@ -140,6 +144,8 @@ export const getAppointment = /* GraphQL */ `query GetAppointment($id: ID!) {
   getAppointment(id: $id) {
     id
     clientOwner
+    clientName
+    clientEmail
     proOwner
     professionalId
     requestedStart
@@ -148,6 +154,13 @@ export const getAppointment = /* GraphQL */ `query GetAppointment($id: ID!) {
     proposedStart
     proposedEnd
     notes
+    meetingId
+    meetingRegion
+    meetingData
+    clientAttendeeId
+    proAttendeeId
+    clientJoinToken
+    proJoinToken
     caseId
     createdAt
     updatedAt
@@ -167,6 +180,8 @@ export const listAppointments = /* GraphQL */ `query ListAppointments(
     items {
       id
       clientOwner
+      clientName
+      clientEmail
       proOwner
       professionalId
       requestedStart
@@ -175,6 +190,13 @@ export const listAppointments = /* GraphQL */ `query ListAppointments(
       proposedStart
       proposedEnd
       notes
+      meetingId
+      meetingRegion
+      meetingData
+      clientAttendeeId
+      proAttendeeId
+      clientJoinToken
+      proJoinToken
       caseId
       createdAt
       updatedAt
@@ -349,6 +371,7 @@ export const getProfessionalAgenda = /* GraphQL */ `query GetProfessionalAgenda(
     clientId
     date
     time
+    endTime
     status
     meetingLink
     createdAt
@@ -376,6 +399,7 @@ export const listProfessionalAgenda = /* GraphQL */ `query ListProfessionalAgend
       clientId
       date
       time
+      endTime
       status
       meetingLink
       createdAt
@@ -455,6 +479,7 @@ export const professionalAgendasByProfessionalId = /* GraphQL */ `query Professi
       clientId
       date
       time
+      endTime
       status
       meetingLink
       createdAt

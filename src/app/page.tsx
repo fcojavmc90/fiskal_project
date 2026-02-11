@@ -1,103 +1,125 @@
-'use client';
-import { useState, useEffect } from 'react';
-import { signIn, fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
+"use client";
+import React, { useEffect, useState } from 'react';
+import { getCurrentUser, fetchUserAttributes, signIn } from 'aws-amplify/auth';
 import { useRouter } from 'next/navigation';
+import { createProfessionalProfile, createUserProfile, getProfessionalProfileByOwner, getUserProfileByOwner } from '../lib/graphqlClient';
+import { ProType, UserRole } from '../API';
 import Link from 'next/link';
-import { useLanguage } from '@/context/LanguageContext';
+import { isAuthBypassed } from '../lib/authBypass';
+import { ensureAmplifyConfigured } from '../lib/amplifyClient';
 
-export default function BridgePage() {
-  const [lang, setLang] = useState<'en' | 'es'>('es');
-  const { t, lang } = useLanguage();
-  const [f, setF] = useState({ email: '', password: '' });
-  const [loading, setLoading] = useState(false);
+export default function HomePage() {
+  ensureAmplifyConfigured();
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
 
-  // Función de Redirección según el State Machine del Masterprompt
-  const handleRouting = async () => {
+  useEffect(() => {
+    checkAuthState();
+  }, []);
+
+  async function checkAuthState() {
+    if (isAuthBypassed()) {
+      setLoading(false);
+      return;
+    }
     try {
-      const attributes = await fetchUserAttributes();
-      const role = attributes['custom:role'];
+      const user = await getCurrentUser();
+      const attr = await fetchUserAttributes();
+      const roleRaw = attr['custom:role'];
+      const role = roleRaw === 'PRO' ? 'PRO' : 'CLIENT';
+      const sub = attr.sub ?? user.userId;
+      const firstName = attr.given_name ?? attr['custom:firstName'] ?? '';
+      const lastName = attr.family_name ?? attr['custom:lastName'] ?? '';
+      const email = attr.email ?? '';
 
-      if (role === 'PRO') {
-        router.push('/expert-dashboard');
-      } else {
-        // Lógica de estados para CLIENT
-        const surveyData = localStorage.getItem('fiskal_survey_data');
-        const isPaid = localStorage.getItem('fiskal_hito_1_paid'); // Se activa vía Webhook
+      if (sub) {
+        try {
+          const existing = await getUserProfileByOwner(sub);
+          if (!existing) {
+            await createUserProfile({
+              owner: sub,
+              role: role === 'PRO' ? UserRole.PRO : UserRole.CLIENT,
+              email,
+              firstName,
+              lastName,
+            });
+          }
+        } catch (err) {
+          console.warn('UserProfile create skipped:', err);
+        }
 
-        if (!surveyData) {
-          router.push('/survey');
-        } else if (!isPaid) {
-          router.push('/match-results');
-        } else {
-          router.push('/dashboard-client');
+        if (role === 'PRO') {
+          try {
+            const displayName = lastName ? `${firstName} ${lastName[0].toUpperCase()}.` : firstName;
+            const existingPro = await getProfessionalProfileByOwner(sub);
+            if (!existingPro) {
+              await createProfessionalProfile({
+                owner: sub,
+                proType: ProType.TAX,
+                displayName: displayName || 'Profesional',
+                bio: attr['custom:description'] ?? 'Especialista fiscal.',
+                ratingAvg: 0,
+                ratingCount: 0,
+                isActive: true,
+              });
+            }
+          } catch (err) {
+            console.warn('ProfessionalProfile create skipped:', err);
+          }
         }
       }
-    } catch (error) {
-      console.error("Routing error:", error);
+
+      const roleCookie = role === 'PRO' ? 'professional' : 'client';
+      document.cookie = `fk_role=${roleCookie}; path=/`;
+      const surveyDone = localStorage.getItem('fiskal_survey_completed') === 'true';
+      const paidInitial = localStorage.getItem('fiskal_paid_initial') === 'true';
+      document.cookie = `fk_has_survey=${surveyDone ? '1' : '0'}; path=/`;
+      document.cookie = `fk_paid_initial=${paidInitial ? '1' : '0'}; path=/`;
+
+      if (role === 'PRO') router.push('/expert-dashboard');
+      else {
+        router.push('/dashboard-client');
+      }
+    } catch {
+      setLoading(false);
     }
-  };
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setError('');
+    setAuthLoading(true);
     try {
-      await signIn({ username: f.email, password: f.password });
-      await handleRouting();
-    } catch (error: any) {
-      alert(lang === 'es' ? "Error de acceso: Credenciales inválidas" : "Login error: Invalid credentials");
+      await signIn({ username: email.trim(), password });
+      await checkAuthState();
+    } catch (err: any) {
+      setError(err?.message || 'No se pudo iniciar sesión.');
     } finally {
-      setLoading(false);
+      setAuthLoading(false);
     }
   };
 
+  if (loading) return <div style={{background:'#001a2c', height:'100vh', display:'flex', alignItems:'center', justifyContent:'center', color:'#00e5ff'}}>Iniciando FISKAL Core v3.0...</div>;
   return (
-    <div style={{ background: '#001a2c', minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: 'white', padding: '20px' }}>
-      <button 
-        onClick={() => setLang(lang === 'es' ? 'en' : 'es')} 
-        style={{ position: 'absolute', top: 20, right: 20, background: 'transparent', border: '1px solid #00e5ff', color: '#00e5ff', padding: '5px 12px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}
-      >
-        {lang.toUpperCase()}
-      </button>
-
-      <div style={{ background: '#003a57', padding: '45px', borderRadius: '20px', width: '100%', maxWidth: '400px', textAlign: 'center', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
-        <h1 style={{ color: '#00e5ff', fontSize: '36px', marginBottom: '10px', letterSpacing: '4px', fontWeight: '900' }}>FISKAL</h1>
-        <p style={{ color: '#b0bec5', marginBottom: '30px', fontSize: '14px' }}>{t.loginTitle}</p>
-        
-        <form onSubmit={handleLogin}>
-          <input 
-            type="email" 
-            placeholder={t.email} 
-            onChange={e => setF({...f, email: e.target.value})} 
-            style={{ width: '100%', padding: '14px', marginBottom: '15px', borderRadius: '10px', border: 'none', background: '#001a2c', color: 'white', outline: '1px solid #003a57' }} 
-            required 
-          />
-          <input 
-            type="password" 
-            placeholder={t.password} 
-            onChange={e => setF({...f, password: e.target.value})} 
-            style={{ width: '100%', padding: '14px', marginBottom: '30px', borderRadius: '10px', border: 'none', background: '#001a2c', color: 'white', outline: '1px solid #003a57' }} 
-            required 
-          />
-          
-          <button 
-            type="submit" 
-            disabled={loading} 
-            style={{ width: '100%', padding: '16px', background: '#00ff88', color: '#00283d', border: 'none', borderRadius: '10px', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer', transition: '0.3s' }}
-          >
-            {loading ? '...' : t.loginBtn}
-          </button>
+    <main className="fk-page">
+      <div className="fk-card">
+        <h1 className="fk-title">Iniciar Sesión</h1>
+        {error && <div className="fk-error">{error}</div>}
+        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <label className="fk-label">Correo</label>
+          <input className="fk-input" type="email" placeholder="tu@correo.com" value={email} onChange={e => setEmail(e.target.value)} required />
+          <label className="fk-label">Contraseña</label>
+          <input className="fk-input" type="password" placeholder="********" value={password} onChange={e => setPassword(e.target.value)} required />
+          <button className="fk-btn" type="submit" disabled={authLoading}>{authLoading ? 'Ingresando...' : 'Entrar'}</button>
         </form>
-
-        <div style={{ marginTop: '30px', borderTop: '1px solid #00283d', paddingTop: '20px' }}>
-          <p style={{ fontSize: '14px', color: '#b0bec5' }}>
-            {lang === 'es' ? '¿No tienes cuenta?' : 'New here?'} 
-            <Link href="/register" style={{ color: '#00e5ff', textDecoration: 'none', marginLeft: '8px', fontWeight: 'bold' }}>
-              {lang === 'es' ? 'Regístrate' : 'Register'}
-            </Link>
-          </p>
+        <div className="fk-link-row">
+          <Link className="fk-link" href="/register">Crear cuenta</Link>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

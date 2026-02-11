@@ -78,9 +78,16 @@ type ProfessionalProfile
 
 type SurveyResponse
   @model
-  @auth(rules: [{ allow: owner, ownerField: "owner", operations: [create, read, update] }]) {
+  @auth(
+    rules: [
+      { allow: owner, ownerField: "owner", operations: [create, read, update] }
+      { allow: owner, ownerField: "proOwner", operations: [read] }
+    ]
+  ) {
   id: ID!
   owner: String!
+  proOwner: String
+  professionalId: ID
   answersJson: AWSJSON!
 }
 
@@ -94,6 +101,8 @@ type Appointment
   ) {
   id: ID!
   clientOwner: String!
+  clientName: String
+  clientEmail: AWSEmail
   proOwner: String!
   professionalId: ID!
   requestedStart: AWSDateTime!
@@ -102,6 +111,13 @@ type Appointment
   proposedStart: AWSDateTime
   proposedEnd: AWSDateTime
   notes: String
+  meetingId: String
+  meetingRegion: String
+  meetingData: AWSJSON
+  clientAttendeeId: String
+  proAttendeeId: String
+  clientJoinToken: String
+  proJoinToken: String
   caseId: ID
 }
 
@@ -193,8 +209,8 @@ type ProfessionalAgenda
       # Profesional: CRUD solo sus registros
       { allow: owner, ownerField: "professionalId", operations: [create, read, update, delete] }
 
-      # Cliente (PASO C): habilitar cuando exista reserva/pago (por ahora comentado)
-      # { allow: owner, ownerField: "clientId", operations: [read, update] }
+      # Cliente (PASO C): lectura para ver agenda y update para reservar
+      { allow: private, operations: [read, update] }
     ]
   ) {
   id: ID!
@@ -207,10 +223,9 @@ type ProfessionalAgenda
   clientId: ID
   date: String! # YYYY-MM-DD
   time: String! # HH:mm
+  endTime: String # HH:mm
   status: ProfessionalAgendaStatus!
   meetingLink: String
   createdAt: AWSDateTime
   updatedAt: AWSDateTime
 }
-
-

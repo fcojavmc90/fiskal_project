@@ -7,7 +7,7 @@
             "UserPoolId"
           ],
           "category": "auth",
-          "resourceName": "taxmvpfe99dd4f"
+          "resourceName": "taxmvpd8e247c7d8e247c7"
         }
       ],
       "output": {
@@ -16,7 +16,7 @@
           "defaultAuthentication": {
             "authenticationType": "AMAZON_COGNITO_USER_POOLS",
             "userPoolConfig": {
-              "userPoolId": "authtaxmvpfe99dd4f"
+              "userPoolId": "authtaxmvpd8e247c7d8e247c7"
             }
           }
         }
@@ -26,7 +26,7 @@
     }
   },
   "auth": {
-    "taxmvpfe99dd4f": {
+    "taxmvpd8e247c7d8e247c7": {
       "customAuth": false,
       "dependsOn": [
         {
@@ -35,7 +35,7 @@
             "Name"
           ],
           "category": "function",
-          "resourceName": "taxmvpfe99dd4fPostConfirmation",
+          "resourceName": "taxmvpd8e247c7d8e247c7PostConfirmation",
           "triggerProvider": "Cognito"
         }
       ],
@@ -72,7 +72,7 @@
             "IdentityPoolId"
           ],
           "category": "auth",
-          "resourceName": "taxmvpfe99dd4f"
+          "resourceName": "taxmvpd8e247c7d8e247c7"
         }
       ],
       "providerPlugin": "awscloudformation",
@@ -80,13 +80,49 @@
     }
   },
   "function": {
+    "taxmvpd8e247c7d8e247c7PostConfirmation": {
+      "build": true,
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda"
+    },
     "taxmvpfe99dd4fPostConfirmation": {
       "build": true,
       "providerPlugin": "awscloudformation",
       "service": "Lambda"
     }
   },
+  "hosting": {
+    "amplifyhosting": {
+      "providerPlugin": "awscloudformation",
+      "service": "amplifyhosting",
+      "type": "manual"
+    }
+  },
   "parameters": {
+    "AMPLIFY_function_taxmvpd8e247c7d8e247c7PostConfirmation_GROUP": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "taxmvpd8e247c7d8e247c7PostConfirmation"
+        }
+      ]
+    },
+    "AMPLIFY_function_taxmvpd8e247c7d8e247c7PostConfirmation_deploymentBucketName": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "taxmvpd8e247c7d8e247c7PostConfirmation"
+        }
+      ]
+    },
+    "AMPLIFY_function_taxmvpd8e247c7d8e247c7PostConfirmation_s3Key": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "taxmvpd8e247c7d8e247c7PostConfirmation"
+        }
+      ]
+    },
     "AMPLIFY_function_taxmvpfe99dd4fPostConfirmation_GROUP": {
       "usedBy": [
         {
@@ -110,11 +146,49 @@
           "resourceName": "taxmvpfe99dd4fPostConfirmation"
         }
       ]
+    },
+    "AMPLIFY_hosting_amplifyhosting_appId": {
+      "usedBy": [
+        {
+          "category": "hosting",
+          "resourceName": "amplifyhosting"
+        }
+      ]
+    },
+    "AMPLIFY_hosting_amplifyhosting_type": {
+      "usedBy": [
+        {
+          "category": "hosting",
+          "resourceName": "amplifyhosting"
+        }
+      ]
     }
   },
   "storage": {
     "fiskaldocuments": {
-      "dependsOn": [],
+      "dependsOn": [
+        {
+          "attributes": [
+            "UserPoolId"
+          ],
+          "category": "auth",
+          "resourceName": "taxmvpd8e247c7d8e247c7"
+        },
+        {
+          "attributes": [
+            "CLIENTGroupRole"
+          ],
+          "category": "auth",
+          "resourceName": "userPoolGroups"
+        },
+        {
+          "attributes": [
+            "PROGroupRole"
+          ],
+          "category": "auth",
+          "resourceName": "userPoolGroups"
+        }
+      ],
       "providerPlugin": "awscloudformation",
       "service": "S3"
     }

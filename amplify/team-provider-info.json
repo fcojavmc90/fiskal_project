@@ -13,13 +13,6 @@
       "AuthTriggerTemplateURL": "https://s3.amazonaws.com/amplify-taxmvp-dev-91f6c-deployment/amplify-cfn-templates/auth/auth-trigger-cloudformation-template.json"
     },
     "categories": {
-      "auth": {
-        "taxmvpfe99dd4f": {},
-        "userPoolGroups": {}
-      },
-      "api": {
-        "taxmvp": {}
-      },
       "storage": {
         "fiskaldocuments": {}
       },
@@ -28,6 +21,24 @@
           "GROUP": "CLIENT",
           "deploymentBucketName": "amplify-taxmvp-dev-91f6c-deployment",
           "s3Key": "amplify-builds/taxmvpfe99dd4fPostConfirmation-73475a67766555327376-build.zip"
+        },
+        "taxmvpd8e247c7d8e247c7PostConfirmation": {
+          "GROUP": "CLIENT",
+          "deploymentBucketName": "amplify-taxmvp-dev-91f6c-deployment",
+          "s3Key": "amplify-builds/taxmvpd8e247c7d8e247c7PostConfirmation-614d4647664546416973-build.zip"
+        }
+      },
+      "auth": {
+        "taxmvpd8e247c7d8e247c7": {},
+        "userPoolGroups": {}
+      },
+      "api": {
+        "taxmvp": {}
+      },
+      "hosting": {
+        "amplifyhosting": {
+          "appId": "d2tjo9i2r3nhc2",
+          "type": "manual"
         }
       }
     }

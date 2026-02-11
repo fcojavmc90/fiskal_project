@@ -1,21 +1,20 @@
-import './globals.css'
-import { Inter } from 'next/font/google'
-import AmplifyConfigComponent from '@/components/AmplifyConfig'
-import { LanguageProvider } from '@/context/LanguageContext'
-import Navbar from '@/components/Navbar'
-
-const inter = Inter({ subsets: ['latin'] })
+"use client";
+import './globals.css';
+import { LanguageProvider } from './context/LanguageContext';
+import React from 'react';
+import { ensureAmplifyConfigured } from '../lib/amplifyClient';
+import Navbar from '../components/Navbar';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  ensureAmplifyConfigured();
   return (
-    <html lang="en">
-      <body className={inter.className} style={{ margin: 0 }}>
+    <html lang="es">
+      <body>
         <LanguageProvider>
-          <AmplifyConfigComponent />
           <Navbar />
-          <main>{children}</main>
+          {children}
         </LanguageProvider>
       </body>
     </html>
-  )
+  );
 }

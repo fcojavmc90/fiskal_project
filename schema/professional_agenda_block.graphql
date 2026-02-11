@@ -17,6 +17,7 @@ type ProfessionalAgenda
   @auth(
     rules: [
       { allow: owner, ownerField: "professionalId", operations: [create, read, update, delete] }
+      { allow: private, operations: [read, update] }
     ]
   ) {
   id: ID!
@@ -29,6 +30,7 @@ type ProfessionalAgenda
   clientId: ID
   date: String!
   time: String!
+  endTime: String
   status: ProfessionalAgendaStatus!
   meetingLink: String
   createdAt: AWSDateTime

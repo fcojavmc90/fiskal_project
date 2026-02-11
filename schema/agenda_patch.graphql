@@ -21,6 +21,8 @@ type ProfessionalAgenda
       # Profesional: puede leer/escribir SOLO sus registros
       # identityClaim:"sub" permite que ownerField use el "sub" del token
       { allow: owner, ownerField: "professionalId", identityClaim: "sub", operations: [create, read, update, delete] }
+      # Cliente: lectura para ver agenda y update para reservar
+      { allow: private, operations: [read, update] }
     ]
   )
   @key(
@@ -33,6 +35,7 @@ type ProfessionalAgenda
   clientId: ID         # sub del cliente cuando reserve (PASO C)
   date: String!        # YYYY-MM-DD
   time: String!        # HH:mm
+  endTime: String      # HH:mm
   status: ProfessionalAgendaStatus!
   meetingLink: String
   createdAt: AWSDateTime

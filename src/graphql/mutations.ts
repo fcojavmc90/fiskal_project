@@ -141,6 +141,8 @@ export const createSurveyResponse = /* GraphQL */ `mutation CreateSurveyResponse
   createSurveyResponse(input: $input, condition: $condition) {
     id
     owner
+    proOwner
+    professionalId
     answersJson
     createdAt
     updatedAt
@@ -158,6 +160,8 @@ export const updateSurveyResponse = /* GraphQL */ `mutation UpdateSurveyResponse
   updateSurveyResponse(input: $input, condition: $condition) {
     id
     owner
+    proOwner
+    professionalId
     answersJson
     createdAt
     updatedAt
@@ -175,6 +179,8 @@ export const deleteSurveyResponse = /* GraphQL */ `mutation DeleteSurveyResponse
   deleteSurveyResponse(input: $input, condition: $condition) {
     id
     owner
+    proOwner
+    professionalId
     answersJson
     createdAt
     updatedAt
@@ -192,6 +198,8 @@ export const createAppointment = /* GraphQL */ `mutation CreateAppointment(
   createAppointment(input: $input, condition: $condition) {
     id
     clientOwner
+    clientName
+    clientEmail
     proOwner
     professionalId
     requestedStart
@@ -200,6 +208,13 @@ export const createAppointment = /* GraphQL */ `mutation CreateAppointment(
     proposedStart
     proposedEnd
     notes
+    meetingId
+    meetingRegion
+    meetingData
+    clientAttendeeId
+    proAttendeeId
+    clientJoinToken
+    proJoinToken
     caseId
     createdAt
     updatedAt
@@ -217,6 +232,8 @@ export const updateAppointment = /* GraphQL */ `mutation UpdateAppointment(
   updateAppointment(input: $input, condition: $condition) {
     id
     clientOwner
+    clientName
+    clientEmail
     proOwner
     professionalId
     requestedStart
@@ -225,6 +242,13 @@ export const updateAppointment = /* GraphQL */ `mutation UpdateAppointment(
     proposedStart
     proposedEnd
     notes
+    meetingId
+    meetingRegion
+    meetingData
+    clientAttendeeId
+    proAttendeeId
+    clientJoinToken
+    proJoinToken
     caseId
     createdAt
     updatedAt
@@ -242,6 +266,8 @@ export const deleteAppointment = /* GraphQL */ `mutation DeleteAppointment(
   deleteAppointment(input: $input, condition: $condition) {
     id
     clientOwner
+    clientName
+    clientEmail
     proOwner
     professionalId
     requestedStart
@@ -250,6 +276,13 @@ export const deleteAppointment = /* GraphQL */ `mutation DeleteAppointment(
     proposedStart
     proposedEnd
     notes
+    meetingId
+    meetingRegion
+    meetingData
+    clientAttendeeId
+    proAttendeeId
+    clientJoinToken
+    proJoinToken
     caseId
     createdAt
     updatedAt
@@ -501,6 +534,7 @@ export const createProfessionalAgenda = /* GraphQL */ `mutation CreateProfession
     clientId
     date
     time
+    endTime
     status
     meetingLink
     createdAt
@@ -522,6 +556,7 @@ export const updateProfessionalAgenda = /* GraphQL */ `mutation UpdateProfession
     clientId
     date
     time
+    endTime
     status
     meetingLink
     createdAt
@@ -543,6 +578,7 @@ export const deleteProfessionalAgenda = /* GraphQL */ `mutation DeleteProfession
     clientId
     date
     time
+    endTime
     status
     meetingLink
     createdAt

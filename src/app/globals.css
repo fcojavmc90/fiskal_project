@@ -1,75 +1,152 @@
-/* FISKAL OFFICIAL BRANDING CSS */
+* { box-sizing: border-box; }
+
 :root {
-  --navy: #00283d;
-  --turquoise: #2eb1c2;
-  --orange: #f7931e;
-  --slate-50: #f8fafc;
+  --fk-bg: #001a2c;
+  --fk-panel: #003a57;
+  --fk-accent: #00e5ff;
+  --fk-accent-2: #00ff88;
+  --fk-text: #ffffff;
+  --fk-muted: #9bb3c7;
+  --fk-danger: #ff4d4d;
+  --fk-border: #00e5ff;
 }
 
 body {
   margin: 0;
-  padding: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: var(--slate-50);
-  color: var(--navy);
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  background: var(--fk-bg);
+  color: var(--fk-text);
 }
 
-.fiskal-navbar {
-  background-color: var(--navy);
-  border-bottom: 3px solid var(--turquoise);
-  padding: 1rem 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-}
+a { color: inherit; text-decoration: none; }
 
-.fiskal-logo-container {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.fiskal-logo-icon {
-  background-color: var(--turquoise);
-  color: white;
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
+.fk-page {
+  min-height: 100vh;
+  background: var(--fk-bg);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 900;
-  font-size: 1.5rem;
-  font-style: italic;
+  padding: 24px;
 }
 
-.fiskal-brand-name {
-  color: white;
-  font-weight: 800;
-  font-size: 1.5rem;
-  letter-spacing: -1px;
+.fk-card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--fk-panel);
+  border: 1px solid var(--fk-border);
+  border-radius: 14px;
+  padding: 28px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
 }
 
-.fiskal-btn-primary {
-  background-color: var(--turquoise);
-  color: var(--navy);
-  padding: 10px 24px;
-  border-radius: 50px;
-  font-weight: bold;
-  text-decoration: none;
-  transition: 0.3s;
-}
-
-.fiskal-btn-primary:hover {
-  background-color: white;
-}
-
-.contact-alert {
-  background-color: var(--orange);
-  color: white;
-  padding: 8px;
+.fk-title {
+  margin: 0 0 18px 0;
+  color: var(--fk-accent);
   text-align: center;
-  font-weight: bold;
-  font-size: 0.8rem;
+}
+
+.fk-label {
+  color: var(--fk-accent);
+  font-size: 0.85rem;
+}
+
+.fk-input,
+.fk-select,
+.fk-textarea {
+  width: 100%;
+  background: #001b2c;
+  border: 1px solid var(--fk-border);
+  color: var(--fk-text);
+  padding: 12px;
+  border-radius: 6px;
+  outline: none;
+}
+
+.fk-btn {
+  width: 100%;
+  background: var(--fk-accent-2);
+  color: #001a2c;
+  border: none;
+  border-radius: 6px;
+  padding: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.fk-btn-secondary {
+  width: 100%;
+  background: transparent;
+  color: var(--fk-accent);
+  border: 1px solid var(--fk-border);
+  border-radius: 6px;
+  padding: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fk-link {
+  color: var(--fk-accent);
+  font-size: 0.9rem;
+}
+
+.fk-link-row {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.fk-error {
+  color: var(--fk-danger);
+  font-size: 0.85rem;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.fk-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: #002238;
+  border-bottom: 1px solid rgba(0, 229, 255, 0.2);
+}
+
+.fk-nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 22px;
+  gap: 16px;
+}
+
+.fk-brand {
+  font-weight: 800;
+  color: var(--fk-accent);
+  letter-spacing: 0.5px;
+}
+
+.fk-nav-links {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.fk-user {
+  color: var(--fk-muted);
+  font-size: 0.9rem;
+}
+
+.fk-logout {
+  background: transparent;
+  color: var(--fk-accent);
+  border: 1px solid var(--fk-border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+@media (max-width: 720px) {
+  .fk-nav-inner { flex-direction: column; align-items: flex-start; }
 }

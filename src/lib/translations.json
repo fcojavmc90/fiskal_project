@@ -1,0 +1,30 @@
+{
+  "es": {
+    "status.sync": "Sincronizando FISKAL Core...",
+    "survey": {
+      "title": "Diagnóstico de Notificaciones Fiscales",
+      "phase1": "Fase 1: Identificación y Urgencia",
+      "phase2": "Fase 2: Análisis de la Notificación",
+      "phase3": "Fase 3: Validación y Contexto",
+      "phase4": "Fase 4: Capacidad de Pago",
+      "phase5": "Fase 5: Estrategia de Defensa",
+      "next": "Siguiente",
+      "back": "Anterior",
+      "finish": "Finalizar y Ver Experto"
+    }
+  },
+  "en": {
+    "status.sync": "Syncing FISKAL Core...",
+    "survey": {
+      "title": "Tax Notice Diagnosis",
+      "phase1": "Phase 1: ID & Urgency",
+      "phase2": "Phase 2: Notice Analysis",
+      "phase3": "Phase 3: Validation & Context",
+      "phase4": "Phase 4: Payment Capacity",
+      "phase5": "Phase 5: Defense Strategy",
+      "next": "Next",
+      "back": "Back",
+      "finish": "Finish & See Expert"
+    }
+  }
+}

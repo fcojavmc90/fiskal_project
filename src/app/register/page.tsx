@@ -1,58 +1,156 @@
-'use client';
-import { useState } from 'react';
-import { signUp } from 'aws-amplify/auth';
-import { useLanguage } from '@/context/LanguageContext';
+"use client";
+import React, { useEffect, useState } from 'react';
+import { fetchUserAttributes, getCurrentUser, signUp } from 'aws-amplify/auth';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function RegisterPage() {
-  const { t, lang } = useLanguage();
-  const [f, setF] = useState({ email: '', password: '', role: 'CLIENT', country: '', phone: '' });
-  const [specs, setSpecs] = useState<string[]>([]); // Array para múltiples especialidades
-  
-  const toggleSpec = (s: string) => {
-    setSpecs(prev => prev.includes(s) ? prev.filter(i => i !== s) : [...prev, s]);
-  };
+  const router = useRouter();
+  const [form, setForm] = useState({ 
+    firstName: '',
+    lastName: '',
+    email: '', 
+    password: '', 
+    confirm: '', 
+    role: 'CLIENT', 
+    country: 'US', 
+    state: '',
+    phone: '',
+    description: ''
+  });
 
-  const handleRegister = async (e: React.FormEvent) => {
+  useEffect(() => {
+    const guard = async () => {
+      try {
+        const user = await getCurrentUser();
+        const attr = await fetchUserAttributes();
+        const roleRaw = attr['custom:role'];
+        const role = roleRaw === 'PRO' ? 'PRO' : 'CLIENT';
+        if (user) {
+          router.replace(role === 'PRO' ? '/expert-dashboard' : '/dashboard-client');
+        }
+      } catch {
+        // No autenticado, se queda en registro
+      }
+    };
+    guard();
+  }, [router]);
+
+  const countryOptions = [
+    { value: 'US', label: 'Estados Unidos (US)' },
+    { value: 'MX', label: 'México (MX)' },
+    { value: 'CA', label: 'Canadá (CA)' },
+    { value: 'CO', label: 'Colombia (CO)' },
+    { value: 'AR', label: 'Argentina (AR)' },
+    { value: 'CL', label: 'Chile (CL)' },
+    { value: 'PE', label: 'Perú (PE)' },
+    { value: 'ES', label: 'España (ES)' },
+  ];
+
+  const usStateOptions = [
+    'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA',
+    'HI','ID','IL','IN','IA','KS','KY','LA','ME','MD',
+    'MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ',
+    'NM','NY','NC','ND','OH','OK','OR','PA','RI','SC',
+    'SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'
+  ];
+
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (form.password !== form.confirm) return alert("Las contraseñas no coinciden");
+
     try {
       await signUp({
-        username: f.email,
-        password: f.password,
-        options: { 
-          userAttributes: { 
-            email: f.email,
-            'custom:role': f.role,
-            'custom:specialty': f.role === 'PRO' ? specs.join(',') : 'NONE',
-            'custom:country': f.country
-          } 
+        username: form.email,
+        password: form.password,
+        options: {
+          userAttributes: {
+            email: form.email,
+            given_name: form.firstName,
+            family_name: form.lastName,
+            phone_number: form.phone,
+            'custom:role': form.role,
+            'custom:country': form.country,
+            'custom:phone': form.phone,
+            'custom:description': form.description
+          }
         }
       });
-      window.location.href = '/confirm-email';
-    } catch (e: any) { alert(e.message); }
+      localStorage.setItem('pendingEmail', form.email);
+      alert("Registro exitoso. Revisa tu correo para confirmar.");
+      router.push(`/confirm-email?email=${encodeURIComponent(form.email)}`);
+    } catch (err: any) {
+      alert("Error: " + err.message);
+    }
   };
 
   return (
-    <div style={{ background: '#001a2c', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'white' }}>
-      <form onSubmit={handleRegister} style={{ background: '#003a57', padding: '30px', borderRadius: '15px', width: '350px' }}>
-        <h2>{t.registerTitle}</h2>
-        <select onChange={e => setF({...f, role: e.target.value})} style={{ width: '100%', padding: '10px', marginBottom: '10px' }}>
-          <option value="CLIENT">CLIENTE</option>
-          <option value="PRO">PROFESIONAL</option>
+    <div className="fk-page">
+      <form onSubmit={handleSignUp} className="fk-card" style={{ maxWidth: '460px' }}>
+        <h2 className="fk-title">Registro FISKAL</h2>
+
+        <label className="fk-label">Correo Electrónico</label>
+        <input className="fk-input" type="email" placeholder="ejemplo@correo.com" onChange={e => setForm({...form, email: e.target.value})} required />
+
+        <label className="fk-label">Nombre</label>
+        <input className="fk-input" type="text" placeholder="Nombre" onChange={e => setForm({...form, firstName: e.target.value})} required />
+
+        <label className="fk-label">Apellido</label>
+        <input className="fk-input" type="text" placeholder="Apellido" onChange={e => setForm({...form, lastName: e.target.value})} required />
+
+        <label className="fk-label">Contraseña</label>
+        <input className="fk-input" type="password" placeholder="********" onChange={e => setForm({...form, password: e.target.value})} required />
+
+        <label className="fk-label">Confirmar Contraseña</label>
+        <input className="fk-input" type="password" placeholder="********" onChange={e => setForm({...form, confirm: e.target.value})} required />
+
+        <label className="fk-label">Tipo de Perfil</label>
+        <select className="fk-select" value={form.role} onChange={e => setForm({...form, role: e.target.value})}>
+          <option value="CLIENT">Cliente (Busco defensa fiscal)</option>
+          <option value="PRO">Profesional (Soy experto/CPA)</option>
         </select>
 
-        {f.role === 'PRO' && (
-          <div style={{ marginBottom: '15px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px' }}>
-            {['TAX', 'LEGAL', 'ACCOUNT', 'AUDIT'].map(s => (
-              <label key={s} style={{ fontSize: '12px' }}>
-                <input type="checkbox" onChange={() => toggleSpec(s)} /> {s}
-              </label>
-            ))}
-          </div>
+        {form.role === 'PRO' && (
+          <>
+            <label className="fk-label">Descripción Profesional</label>
+            <textarea className="fk-textarea" placeholder="Cuéntanos tu experiencia y servicios" onChange={e => setForm({...form, description: e.target.value})} rows={3} />
+          </>
         )}
-        
-        <input type="email" placeholder="Email" onChange={e => setF({...f, email: e.target.value})} style={{ width: '100%', padding: '10px', marginBottom: '10px' }} required />
-        <input type="password" placeholder="Password" onChange={e => setF({...f, password: e.target.value})} style={{ width: '100%', padding: '10px', marginBottom: '20px' }} required />
-        <button style={{ width: '100%', padding: '10px', background: '#00ff88', border: 'none', fontWeight: 'bold' }}>{t.registerBtn}</button>
+
+        <label className="fk-label">País</label>
+        <select
+          className="fk-select"
+          value={form.country}
+          onChange={e => {
+            const nextCountry = e.target.value;
+            setForm({ ...form, country: nextCountry, state: nextCountry === 'US' ? form.state : '' });
+          }}
+        >
+          {countryOptions.map(opt => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+
+        <label className="fk-label">Estado (si aplica)</label>
+        <select
+          className="fk-select"
+          value={form.state}
+          onChange={e => setForm({ ...form, state: e.target.value })}
+          disabled={form.country !== 'US'}
+        >
+          <option value="">Selecciona un estado</option>
+          {usStateOptions.map(st => (
+            <option key={st} value={st}>{st}</option>
+          ))}
+        </select>
+
+        <label className="fk-label">Teléfono</label>
+        <input className="fk-input" type="text" placeholder="+1..." onChange={e => setForm({...form, phone: e.target.value})} required />
+
+        <button type="submit" className="fk-btn">Crear Cuenta Ahora</button>
+        <div className="fk-link-row">
+          <Link className="fk-link" href="/">Ya tengo cuenta</Link>
+        </div>
       </form>
     </div>
   );

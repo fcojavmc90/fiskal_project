@@ -54,7 +54,10 @@ function isPublicPath(pathname: string) {
   if (
     pathname.startsWith("/api/health") ||
     pathname.startsWith("/api/auth") ||
-    pathname.startsWith("/api/webhooks")
+    pathname.startsWith("/api/webhooks") ||
+    pathname.startsWith("/api/square") ||
+    pathname.startsWith("/api/send-meeting") ||
+    pathname.startsWith("/api/google")
   ) {
     return true;
   }
@@ -66,12 +69,17 @@ function isProtectedPath(pathname: string) {
   // Protegidas por defecto
   return (
     pathname.startsWith("/client") ||
+    pathname.startsWith("/pro") ||
     pathname.startsWith("/professional") ||
     pathname.startsWith("/survey") ||
     pathname.startsWith("/professionals") ||
     pathname.startsWith("/agenda") ||
     pathname.startsWith("/checkout") ||
-    pathname.startsWith("/case")
+    pathname.startsWith("/case") ||
+    pathname.startsWith("/dashboard-client") ||
+    pathname.startsWith("/expert-dashboard") ||
+    pathname.startsWith("/match-results") ||
+    pathname.startsWith("/call")
   );
 }
 
@@ -88,10 +96,6 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  if (isPublicPath(pathname)) {
-    return NextResponse.next();
-  }
-
   const roleRaw = req.cookies.get(COOKIE_ROLE)?.value ?? "";
   const role = roleRaw.toLowerCase();
   const hasSurvey = truthy(req.cookies.get(COOKIE_HAS_SURVEY)?.value);
@@ -99,9 +103,19 @@ export function middleware(req: NextRequest) {
 
   const isAuthed = role === "client" || role === "professional";
 
+  // Si autenticado, evita el login raíz
+  if (pathname === "/" && isAuthed) {
+    if (role === "professional") return redirect(req, "/expert-dashboard");
+    return redirect(req, "/dashboard-client");
+  }
+
+  if (isPublicPath(pathname)) {
+    return NextResponse.next();
+  }
+
   // Si NO autenticado y quiere ruta protegida -> login
   if (!isAuthed) {
-    if (isProtectedPath(pathname)) return redirect(req, "/login");
+    if (isProtectedPath(pathname)) return redirect(req, "/");
     return NextResponse.next();
   }
 
@@ -111,21 +125,24 @@ export function middleware(req: NextRequest) {
     pathname.startsWith("/register") ||
     pathname.startsWith("/confirm")
   ) {
-    return redirect(req, role === "professional" ? "/professional" : "/client");
+    return redirect(req, role === "professional" ? "/expert-dashboard" : "/dashboard-client");
   }
 
   // ====== ROL: PROFESIONAL ======
   if (role === "professional") {
     // Prohibido: encuesta / checkout / reservar
-    if (pathname.startsWith("/survey")) return redirect(req, "/professional");
-    if (pathname.startsWith("/checkout")) return redirect(req, "/professional");
-    if (pathname.startsWith("/client")) return redirect(req, "/professional");
+    if (pathname.startsWith("/survey")) return redirect(req, "/expert-dashboard");
+    if (pathname.startsWith("/checkout")) return redirect(req, "/expert-dashboard");
+    if (pathname.startsWith("/client")) return redirect(req, "/expert-dashboard");
+    if (pathname.startsWith("/dashboard-client")) return redirect(req, "/expert-dashboard");
 
     // Permitido: /professional/*
     if (pathname.startsWith("/professional")) return NextResponse.next();
+    if (pathname.startsWith("/pro")) return NextResponse.next();
+    if (pathname.startsWith("/expert-dashboard")) return NextResponse.next();
 
     // Cualquier otra protegida -> /professional
-    if (isProtectedPath(pathname)) return redirect(req, "/professional");
+    if (isProtectedPath(pathname)) return redirect(req, "/expert-dashboard");
 
     return NextResponse.next();
   }
@@ -133,13 +150,16 @@ export function middleware(req: NextRequest) {
   // ====== ROL: CLIENTE ======
   if (role === "client") {
     // Prohibido: pantallas de profesional
-    if (pathname.startsWith("/professional")) return redirect(req, "/client");
+    if (pathname.startsWith("/pro")) return redirect(req, "/dashboard-client");
+    if (pathname.startsWith("/professional")) return redirect(req, "/dashboard-client");
+    if (pathname.startsWith("/expert-dashboard")) return redirect(req, "/dashboard-client");
 
     // 1) Encuesta: el cliente sí puede entrar a /survey
     // 2) Matching profesionales: permitir /professionals SOLO si tiene encuesta
     if (pathname.startsWith("/professionals") && !hasSurvey) {
       return redirect(req, "/survey");
     }
+
 
     // 3) Agenda/Checkout: SOLO si ya pagó inicial (USD 150)
     //    Nota: si además quieres forzar "seleccionó profesional", hazlo por cookie/flag adicional en el futuro.
@@ -148,8 +168,9 @@ export function middleware(req: NextRequest) {
       return redirect(req, "/professionals");
     }
 
-    // 4) /client: permitido siempre
+    // 4) /client / dashboard-client: permitido siempre
     if (pathname.startsWith("/client")) return NextResponse.next();
+    if (pathname.startsWith("/dashboard-client")) return NextResponse.next();
 
     // Rutas protegidas restantes: permitir
     if (isProtectedPath(pathname)) return NextResponse.next();

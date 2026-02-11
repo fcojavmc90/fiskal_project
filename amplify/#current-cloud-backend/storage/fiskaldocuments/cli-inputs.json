@@ -9,5 +9,16 @@
     "READ",
     "DELETE"
   ],
-  "groupAccess": {}
+  "groupAccess": {
+    "CLIENT": [
+      "CREATE_AND_UPDATE",
+      "READ",
+      "DELETE"
+    ],
+    "PRO": [
+      "CREATE_AND_UPDATE",
+      "READ",
+      "DELETE"
+    ]
+  }
 }

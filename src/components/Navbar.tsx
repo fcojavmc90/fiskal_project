@@ -1,48 +1,82 @@
-'use client';
-import { useState, useEffect } from 'react';
-import { fetchUserAttributes, signOut } from 'aws-amplify/auth';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useLanguage } from '@/context/LanguageContext';
+"use client";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { fetchUserAttributes, getCurrentUser, signOut } from "aws-amplify/auth";
+import { usePathname, useRouter } from "next/navigation";
+import { isAuthBypassed } from "../lib/authBypass";
+import { ensureAmplifyConfigured } from "../lib/amplifyClient";
+
+type NavUser = {
+  name: string;
+  role?: "PRO" | "CLIENT";
+};
 
 export default function Navbar() {
-  const { lang, setLang } = useLanguage();
-  const [email, setEmail] = useState('');
+  ensureAmplifyConfigured();
   const router = useRouter();
+  const pathname = usePathname();
+  const [user, setUser] = useState<NavUser | null>(null);
 
   useEffect(() => {
-    fetchUserAttributes()
-      .then(attr => setEmail(attr.email || ''))
-      .catch(() => {});
-  }, []);
+    let mounted = true;
+    const load = async () => {
+      if (isAuthBypassed()) {
+        if (mounted) setUser({ name: "Demo", role: "CLIENT" });
+        return;
+      }
+      try {
+        const current = await getCurrentUser();
+        const attr = await fetchUserAttributes();
+        const roleRaw = attr["custom:role"] === "PRO" ? "PRO" : "CLIENT";
+        const first = attr.given_name ?? attr["custom:firstName"] ?? "";
+        const last = attr.family_name ?? attr["custom:lastName"] ?? "";
+        const email = attr.email ?? "";
+        const name =
+          (first || last) ? `${first} ${last}`.trim() :
+          (email || current.username || current.userId);
+        if (mounted) setUser({ name, role: roleRaw });
+      } catch {
+        if (mounted) setUser(null);
+      }
+    };
+    load();
+    return () => { mounted = false; };
+  }, [pathname]);
 
   const handleLogout = async () => {
+    if (isAuthBypassed()) {
+      router.push("/");
+      return;
+    }
     await signOut();
-    router.push('/');
-    window.location.reload();
+    document.cookie = "fk_role=; Max-Age=0; path=/";
+    document.cookie = "fk_has_survey=; Max-Age=0; path=/";
+    document.cookie = "fk_paid_initial=; Max-Age=0; path=/";
+    router.push("/");
   };
 
-  return (
-    <nav style={{ background: '#001a2c', padding: '15px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #003a57' }}>
-      <Link href="/" style={{ textDecoration: 'none' }}>
-        <h2 style={{ color: '#00e5ff', margin: 0, letterSpacing: '2px' }}>FISKAL</h2>
-      </Link>
+  const dashboardHref = user?.role === "PRO" ? "/expert-dashboard" : "/dashboard-client";
 
-      <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-        <button 
-          onClick={() => setLang(lang === 'es' ? 'en' : 'es')}
-          style={{ background: 'transparent', border: '1px solid #00e5ff', color: '#00e5ff', padding: '5px 12px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}
-        >
-          {lang.toUpperCase()}
-        </button>
-        
-        {email ? (
-          <button onClick={handleLogout} style={{ background: 'transparent', border: '1px solid #ff4d4d', color: '#ff4d4d', padding: '5px 10px', borderRadius: '5px', cursor: 'pointer' }}>
-            Logout
-          </button>
-        ) : (
-          <Link href="/" style={{ color: '#00e5ff', textDecoration: 'none', fontWeight: 'bold' }}>Login</Link>
-        )}
+  return (
+    <nav className="fk-nav">
+      <div className="fk-nav-inner">
+        <Link href="/" className="fk-brand">FISKAL</Link>
+        <div className="fk-nav-links">
+          {user ? (
+            <>
+              <Link href={dashboardHref}>Dashboard</Link>
+              {user.role === "CLIENT" && <Link href="/survey">Encuesta</Link>}
+              {user.role === "CLIENT" && <Link href="/professionals">Profesionales</Link>}
+              <span className="fk-user">{user.name}</span>
+              <button className="fk-logout" onClick={handleLogout}>Salir</button>
+            </>
+          ) : (
+            <>
+              <Link href="/">Ingresar</Link>
+              <Link href="/register">Crear cuenta</Link>
+            </>
+          )}
+        </div>
       </div>
     </nav>
   );

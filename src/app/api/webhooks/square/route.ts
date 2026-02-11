@@ -1,21 +1,22 @@
 import { NextResponse } from 'next/server';
-// Nota: Aquí integrarías tu llamada a la base de datos (GraphQL/DynamoDB)
-// para marcar userStatus = 'PAID_HITO_1'
+import { listPaymentsBySquareId, updatePayment } from '../../../../lib/graphqlClient';
+import { PaymentStatus } from '../../../../API';
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    if (body.data.object.payment.status === 'COMPLETED') {
-      const email = body.data.object.payment.note;
-      console.log(`Pago completado para ${email}. Actualizando base de datos...`);
-      
-      // LÓGICA DE PERSISTENCIA:
-      // await updateCustomerStatus(email, { hito1: 'PAID', currentStep: 'SCHEDULE' });
-      
-      return NextResponse.json({ received: true });
+    if (body.type === 'payment.updated' && body.data.object.payment.status === 'COMPLETED') {
+      const paymentId = body.data.object.payment.id;
+      const orderId = body.data.object.payment.order_id;
+      const candidates = await listPaymentsBySquareId(paymentId);
+      const byOrder = orderId ? await listPaymentsBySquareId(orderId) : [];
+      const targets = [...candidates, ...byOrder];
+      for (const p of targets) {
+        await updatePayment({ id: p.id, status: PaymentStatus.PAID, squarePaymentId: paymentId });
+      }
     }
-    return NextResponse.json({ status: 'pending' });
-  } catch (error) {
-    return NextResponse.json({ error: 'Error processing webhook' }, { status: 500 });
+    return NextResponse.json({ received: true });
+  } catch (err) {
+    return NextResponse.json({ error: 'Error' }, { status: 400 });
   }
 }

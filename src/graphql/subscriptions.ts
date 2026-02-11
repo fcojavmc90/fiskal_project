@@ -137,10 +137,13 @@ export const onDeleteProfessionalProfile = /* GraphQL */ `subscription OnDeleteP
 export const onCreateSurveyResponse = /* GraphQL */ `subscription OnCreateSurveyResponse(
   $filter: ModelSubscriptionSurveyResponseFilterInput
   $owner: String
+  $proOwner: String
 ) {
-  onCreateSurveyResponse(filter: $filter, owner: $owner) {
+  onCreateSurveyResponse(filter: $filter, owner: $owner, proOwner: $proOwner) {
     id
     owner
+    proOwner
+    professionalId
     answersJson
     createdAt
     updatedAt
@@ -154,10 +157,13 @@ export const onCreateSurveyResponse = /* GraphQL */ `subscription OnCreateSurvey
 export const onUpdateSurveyResponse = /* GraphQL */ `subscription OnUpdateSurveyResponse(
   $filter: ModelSubscriptionSurveyResponseFilterInput
   $owner: String
+  $proOwner: String
 ) {
-  onUpdateSurveyResponse(filter: $filter, owner: $owner) {
+  onUpdateSurveyResponse(filter: $filter, owner: $owner, proOwner: $proOwner) {
     id
     owner
+    proOwner
+    professionalId
     answersJson
     createdAt
     updatedAt
@@ -171,10 +177,13 @@ export const onUpdateSurveyResponse = /* GraphQL */ `subscription OnUpdateSurvey
 export const onDeleteSurveyResponse = /* GraphQL */ `subscription OnDeleteSurveyResponse(
   $filter: ModelSubscriptionSurveyResponseFilterInput
   $owner: String
+  $proOwner: String
 ) {
-  onDeleteSurveyResponse(filter: $filter, owner: $owner) {
+  onDeleteSurveyResponse(filter: $filter, owner: $owner, proOwner: $proOwner) {
     id
     owner
+    proOwner
+    professionalId
     answersJson
     createdAt
     updatedAt
@@ -197,6 +206,8 @@ export const onCreateAppointment = /* GraphQL */ `subscription OnCreateAppointme
   ) {
     id
     clientOwner
+    clientName
+    clientEmail
     proOwner
     professionalId
     requestedStart
@@ -205,6 +216,13 @@ export const onCreateAppointment = /* GraphQL */ `subscription OnCreateAppointme
     proposedStart
     proposedEnd
     notes
+    meetingId
+    meetingRegion
+    meetingData
+    clientAttendeeId
+    proAttendeeId
+    clientJoinToken
+    proJoinToken
     caseId
     createdAt
     updatedAt
@@ -227,6 +245,8 @@ export const onUpdateAppointment = /* GraphQL */ `subscription OnUpdateAppointme
   ) {
     id
     clientOwner
+    clientName
+    clientEmail
     proOwner
     professionalId
     requestedStart
@@ -235,6 +255,13 @@ export const onUpdateAppointment = /* GraphQL */ `subscription OnUpdateAppointme
     proposedStart
     proposedEnd
     notes
+    meetingId
+    meetingRegion
+    meetingData
+    clientAttendeeId
+    proAttendeeId
+    clientJoinToken
+    proJoinToken
     caseId
     createdAt
     updatedAt
@@ -257,6 +284,8 @@ export const onDeleteAppointment = /* GraphQL */ `subscription OnDeleteAppointme
   ) {
     id
     clientOwner
+    clientName
+    clientEmail
     proOwner
     professionalId
     requestedStart
@@ -265,6 +294,13 @@ export const onDeleteAppointment = /* GraphQL */ `subscription OnDeleteAppointme
     proposedStart
     proposedEnd
     notes
+    meetingId
+    meetingRegion
+    meetingData
+    clientAttendeeId
+    proAttendeeId
+    clientJoinToken
+    proJoinToken
     caseId
     createdAt
     updatedAt
@@ -561,6 +597,7 @@ export const onCreateProfessionalAgenda = /* GraphQL */ `subscription OnCreatePr
     clientId
     date
     time
+    endTime
     status
     meetingLink
     createdAt
@@ -582,6 +619,7 @@ export const onUpdateProfessionalAgenda = /* GraphQL */ `subscription OnUpdatePr
     clientId
     date
     time
+    endTime
     status
     meetingLink
     createdAt
@@ -603,6 +641,7 @@ export const onDeleteProfessionalAgenda = /* GraphQL */ `subscription OnDeletePr
     clientId
     date
     time
+    endTime
     status
     meetingLink
     createdAt
