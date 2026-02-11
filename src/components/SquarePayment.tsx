@@ -12,6 +12,17 @@ export default function SquarePayment({ amountCents, description, onSuccess }: S
   const applicationId = process.env.NEXT_PUBLIC_SQUARE_APP_ID ?? '';
   const locationId = process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID ?? '';
 
+  if (!applicationId || !locationId) {
+    return (
+      <div style={{ padding: '20px', background: '#f8f9fa', borderRadius: '10px', marginTop: '20px' }}>
+        <h3 style={{ color: '#001a2c' }}>{description}</h3>
+        <p style={{ color: '#001a2c' }}>
+          Configura las variables de entorno de Square para habilitar el pago.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div style={{ padding: '20px', background: '#f8f9fa', borderRadius: '10px', marginTop: '20px' }}>
       <h3 style={{ color: '#001a2c' }}>{description}</h3>
