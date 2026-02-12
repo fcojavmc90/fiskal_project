@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { getPaymentById, updatePayment } from '../../lib/graphqlClient';
@@ -9,7 +9,7 @@ import { ensureAmplifyConfigured } from '../../lib/amplifyClient';
 
 const SquarePayment = dynamic(() => import('../../components/SquarePayment'), { ssr: false });
 
-export default function PayPage() {
+function PayPageInner() {
   ensureAmplifyConfigured();
   const router = useRouter();
   const params = useSearchParams();
@@ -74,5 +74,13 @@ export default function PayPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function PayPage() {
+  return (
+    <Suspense fallback={<div style={{ background: '#001a2c', minHeight: '100vh', padding: '40px', color: 'white' }}>Cargando...</div>}>
+      <PayPageInner />
+    </Suspense>
   );
 }
