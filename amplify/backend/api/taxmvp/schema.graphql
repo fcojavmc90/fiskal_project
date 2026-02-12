@@ -192,6 +192,24 @@ type Payment
   squarePaymentId: String
 }
 
+type Message
+  @model
+  @auth(
+    rules: [
+      { allow: owner, ownerField: "clientOwner", operations: [create, read] }
+      { allow: owner, ownerField: "proOwner", operations: [create, read] }
+    ]
+  ) {
+  id: ID!
+  caseId: ID!
+    @index(name: "byCase", queryField: "messagesByCase", sortKeyFields: ["createdAt"])
+  clientOwner: String!
+  proOwner: String!
+  senderRole: String!
+  body: String!
+  createdAt: AWSDateTime
+}
+
 # ===== FISKAL MVP - PASO B: Agenda Profesional =====
 
 enum ProfessionalAgendaStatus {

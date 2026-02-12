@@ -69,7 +69,7 @@ const listSurveyResponsesQuery = /* GraphQL */ `
 const listCasesQuery = /* GraphQL */ `
   query ListCases($filter: ModelCaseFilterInput) {
     listCases(filter: $filter) {
-      items { id caseNumber clientOwner proOwner professionalId appointmentId status servicePriceCents currency }
+      items { id caseNumber clientOwner proOwner professionalId appointmentId status servicePriceCents currency createdAt }
     }
   }
 `;
@@ -79,6 +79,20 @@ const listPaymentsQuery = /* GraphQL */ `
     listPayments(filter: $filter) {
       items { id clientOwner proOwner professionalId appointmentId caseId type amountCents currency status squareCheckoutId squarePaymentId }
     }
+  }
+`;
+
+const listMessagesByCaseQuery = /* GraphQL */ `
+  query MessagesByCase($caseId: ID!, $sortDirection: ModelSortDirection) {
+    messagesByCase(caseId: $caseId, sortDirection: $sortDirection) {
+      items { id caseId clientOwner proOwner senderRole body createdAt }
+    }
+  }
+`;
+
+const createMessageMutation = /* GraphQL */ `
+  mutation CreateMessage($input: CreateMessageInput!) {
+    createMessage(input: $input) { id caseId senderRole body createdAt }
   }
 `;
 
@@ -148,6 +162,25 @@ const createPaymentMutation = /* GraphQL */ `
 const updatePaymentMutation = /* GraphQL */ `
   mutation UpdatePayment($input: UpdatePaymentInput!) {
     updatePayment(input: $input) { id status squarePaymentId }
+  }
+`;
+
+const getPaymentQuery = /* GraphQL */ `
+  query GetPayment($id: ID!) {
+    getPayment(id: $id) {
+      id
+      clientOwner
+      proOwner
+      professionalId
+      appointmentId
+      caseId
+      type
+      amountCents
+      currency
+      status
+      squareCheckoutId
+      squarePaymentId
+    }
   }
 `;
 
@@ -424,6 +457,32 @@ export async function listPaymentsByClientOwner(owner: string) {
   return res.data?.listPayments?.items ?? [];
 }
 
+export async function listPaymentsByProOwner(owner: string) {
+  const res = await getClient().graphql({
+    query: listPaymentsQuery,
+    variables: { filter: { proOwner: { eq: owner } } },
+  });
+  return res.data?.listPayments?.items ?? [];
+}
+
+export async function listMessagesByCase(caseId: string) {
+  const res = await getClient().graphql({
+    query: listMessagesByCaseQuery,
+    variables: { caseId, sortDirection: 'ASC' },
+  });
+  return res.data?.messagesByCase?.items ?? [];
+}
+
+export async function createMessage(input: {
+  caseId: string;
+  clientOwner: string;
+  proOwner: string;
+  senderRole: string;
+  body: string;
+}) {
+  return getClient().graphql({ query: createMessageMutation, variables: { input } });
+}
+
 export async function listCaseDocumentsByCase(caseId: string) {
   const res = await getClient().graphql({
     query: caseDocumentsByCaseQuery,
@@ -479,4 +538,12 @@ export async function updatePayment(input: {
   squarePaymentId?: string | null;
 }) {
   return getClient().graphql({ query: updatePaymentMutation, variables: { input } });
+}
+
+export async function getPaymentById(id: string) {
+  const res = await getClient().graphql({
+    query: getPaymentQuery,
+    variables: { id },
+  });
+  return res.data?.getPayment ?? null;
 }

@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { getCurrentUser, fetchUserAttributes } from 'aws-amplify/auth';
-import { listAgendaByProfessional, listAppointmentsByClient, listCasesByClientOwner, listPaymentsByClientOwner, listProfessionalProfiles, listSurveyResponsesByOwner, updateAppointment, updateProfessionalAgenda, updateProfessionalProfile, updateSurveyResponse } from '../../lib/graphqlClient';
+import { createMessage, listAgendaByProfessional, listAppointmentsByClient, listCasesByClientOwner, listMessagesByCase, listPaymentsByClientOwner, listProfessionalProfiles, listSurveyResponsesByOwner, updateAppointment, updateProfessionalAgenda, updateProfessionalProfile, updateSurveyResponse } from '../../lib/graphqlClient';
 import { AppointmentStatus, PaymentStatus, PaymentType, ProfessionalAgendaStatus } from '../../API';
 import { useRouter } from 'next/navigation';
 import { isAuthBypassed } from '../../lib/authBypass';
@@ -24,6 +24,10 @@ export default function ClientDashboard() {
   const callModalRef = useRef<HTMLDivElement | null>(null);
   const [payments, setPayments] = useState<any[]>([]);
   const [paymentsLoading, setPaymentsLoading] = useState(false);
+  const [messagesByCase, setMessagesByCase] = useState<Record<string, any[]>>({});
+  const [messagesLoading, setMessagesLoading] = useState<Record<string, boolean>>({});
+  const [messageDraftByCase, setMessageDraftByCase] = useState<Record<string, string>>({});
+  const [chatOpenByCase, setChatOpenByCase] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!callModalAppt) return;
@@ -167,28 +171,53 @@ export default function ClientDashboard() {
     alert('Cambio aceptado.');
   };
 
+  const loadMessagesForCase = async (caseId: string) => {
+    if (!caseId || messagesLoading[caseId]) return;
+    setMessagesLoading(prev => ({ ...prev, [caseId]: true }));
+    try {
+      const items = await listMessagesByCase(caseId);
+      setMessagesByCase(prev => ({ ...prev, [caseId]: items }));
+    } finally {
+      setMessagesLoading(prev => ({ ...prev, [caseId]: false }));
+    }
+  };
+
+  const sendMessageForCase = async (caseItem: any) => {
+    const caseId = caseItem?.id;
+    if (!caseId) return;
+    const body = (messageDraftByCase[caseId] || '').trim();
+    if (!body) return;
+    await createMessage({
+      caseId,
+      clientOwner: caseItem.clientOwner,
+      proOwner: caseItem.proOwner,
+      senderRole: 'CLIENT',
+      body,
+    });
+    setMessageDraftByCase(prev => ({ ...prev, [caseId]: '' }));
+    await loadMessagesForCase(caseId);
+  };
+
+  const buildTimeline = (caseItem: any, appt: any, casePayments: any[]) => {
+    const events: Array<{ label: string; date?: string }> = [];
+    if (caseItem?.createdAt) events.push({ label: 'Caso creado', date: caseItem.createdAt });
+    if (appt?.requestedStart) events.push({ label: 'Solicitud de cita', date: appt.requestedStart });
+    if (appt?.status === AppointmentStatus.ACCEPTED) events.push({ label: 'Cita aceptada', date: appt?.requestedStart });
+    if (appt?.meetingId || appt?.meetingData) events.push({ label: 'Videollamada habilitada' });
+    for (const p of casePayments) {
+      const label = p.type === PaymentType.SERVICE_50_FIRST ? 'Pago 50% inicial' : 'Pago 50% final';
+      const suffix = p.status === PaymentStatus.PAID ? ' (pagado)' : ' (pendiente)';
+      events.push({ label: `${label}${suffix}` });
+    }
+    return events;
+  };
+
   const openPaymentLink = async (payment: any) => {
-    const checkoutId = payment?.squareCheckoutId;
-    if (!checkoutId) {
-      alert('No hay enlace de pago disponible.');
+    if (!payment?.id) {
+      alert('Pago inválido.');
       return;
     }
-    try {
-      const res = await fetch(`/api/square/checkout?id=${encodeURIComponent(checkoutId)}`);
-      const data = await res.json();
-      if (!res.ok) {
-        alert(data.error || 'No se pudo obtener el enlace de pago');
-        return;
-      }
-      const url = data?.url;
-      if (!url) {
-        alert('Enlace de pago inválido');
-        return;
-      }
-      window.open(url, '_blank', 'noopener,noreferrer');
-    } catch (err: any) {
-      alert(err?.message || 'Error abriendo el pago');
-    }
+    router.push(`/pay?payment=${encodeURIComponent(payment.id)}`);
   };
 
   return (
@@ -305,6 +334,16 @@ export default function ClientDashboard() {
                 <p><strong>Estado:</strong> {c.status}</p>
                 <p><strong>Precio:</strong> {c.servicePriceCents ? `$${(c.servicePriceCents / 100).toFixed(2)}` : 'Por definir'}</p>
                 <div style={{ marginTop: '10px' }}>
+                  <strong>Línea de tiempo:</strong>
+                  <div style={{ marginTop: '6px', display: 'grid', gap: '6px' }}>
+                    {buildTimeline(c, appointments.find(a => a.id === c.appointmentId), payments.filter(p => p.caseId === c.id)).map((e, idx) => (
+                      <div key={`${c.id}-evt-${idx}`} style={{ color: '#9adfff' }}>
+                        • {e.label}{e.date ? ` — ${e.date}` : ''}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ marginTop: '10px' }}>
                   <strong>Pagos:</strong>
                   {paymentsLoading && <p>Cargando pagos...</p>}
                   {!paymentsLoading && (() => {
@@ -336,6 +375,49 @@ export default function ClientDashboard() {
                       </div>
                     );
                   })()}
+                </div>
+                <div style={{ marginTop: '10px' }}>
+                  <button
+                    onClick={() => {
+                      setChatOpenByCase(prev => ({ ...prev, [c.id]: !prev[c.id] }));
+                      loadMessagesForCase(c.id);
+                    }}
+                    style={{ background: '#7dd3fc', border: 'none', padding: '6px 10px', fontWeight: 'bold', cursor: 'pointer' }}
+                  >
+                    Mensajes
+                  </button>
+                  {chatOpenByCase[c.id] && (
+                    <div style={{ marginTop: '8px', background: '#001a2c', border: '1px solid #00e5ff', padding: '12px', borderRadius: '8px' }}>
+                      <strong>Chat del caso</strong>
+                      {messagesLoading[c.id] && <p>Cargando mensajes...</p>}
+                      {!messagesLoading[c.id] && (
+                        <div style={{ marginTop: '8px', display: 'grid', gap: '6px' }}>
+                          {messagesByCase[c.id]?.length === 0 && <p>No hay mensajes aún.</p>}
+                          {(messagesByCase[c.id] || []).map((m: any) => (
+                            <div key={m.id} style={{ background: '#003a57', padding: '8px', borderRadius: '6px' }}>
+                              <div style={{ fontSize: '0.85rem', color: '#9adfff' }}>{m.senderRole} — {m.createdAt || ''}</div>
+                              <div>{m.body}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div style={{ marginTop: '10px', display: 'flex', gap: '8px' }}>
+                        <input
+                          type="text"
+                          placeholder="Escribe un mensaje"
+                          value={messageDraftByCase[c.id] || ''}
+                          onChange={e => setMessageDraftByCase(prev => ({ ...prev, [c.id]: e.target.value }))}
+                          style={{ flex: 1 }}
+                        />
+                        <button
+                          onClick={() => sendMessageForCase(c)}
+                          style={{ background: '#00e5ff', border: 'none', padding: '6px 10px', fontWeight: 'bold', cursor: 'pointer' }}
+                        >
+                          Enviar
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

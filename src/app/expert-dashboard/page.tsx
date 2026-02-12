@@ -5,7 +5,7 @@ import { getUrl } from '@aws-amplify/storage';
 import { useRouter } from 'next/navigation';
 import ChimeCall from '../../components/ChimeCall';
 import { AppointmentStatus, CaseStatus, PaymentStatus, PaymentType, ProfessionalAgendaStatus } from '../../API';
-import { createPayment, createProfessionalAgenda, deleteProfessionalAgenda, getUserProfileByOwner, listAgendaByProfessional, listAppointmentsByPro, listCaseDocumentsByCase, listCasesByProOwner, listSurveyResponsesByOwnerAndPro, listSurveyResponsesByProOwner, updateAppointment, updateCase, updateProfessionalAgenda } from '../../lib/graphqlClient';
+import { createMessage, createPayment, createProfessionalAgenda, deleteProfessionalAgenda, getUserProfileByOwner, listAgendaByProfessional, listAppointmentsByPro, listCaseDocumentsByCase, listCasesByProOwner, listMessagesByCase, listPaymentsByProOwner, listSurveyResponsesByOwnerAndPro, listSurveyResponsesByProOwner, updateAppointment, updateCase, updateProfessionalAgenda } from '../../lib/graphqlClient';
 import { isAuthBypassed } from '../../lib/authBypass';
 
 const SURVEY_QUESTIONS: Array<{ id: string; label: string }> = [
@@ -61,6 +61,11 @@ export default function ExpertDashboard() {
   const [callModalAppt, setCallModalAppt] = useState<any | null>(null);
   const [callFullscreen, setCallFullscreen] = useState(false);
   const callModalRef = useRef<HTMLDivElement | null>(null);
+  const [payments, setPayments] = useState<any[]>([]);
+  const [messagesByCase, setMessagesByCase] = useState<Record<string, any[]>>({});
+  const [messagesLoading, setMessagesLoading] = useState<Record<string, boolean>>({});
+  const [messageDraftByCase, setMessageDraftByCase] = useState<Record<string, string>>({});
+  const [chatOpenByCase, setChatOpenByCase] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!callModalAppt) return;
@@ -114,6 +119,8 @@ export default function ExpertDashboard() {
     setSlots(sortedAgenda);
     const proCases = await listCasesByProOwner(sub);
     setCases(proCases);
+    const proPayments = await listPaymentsByProOwner(sub);
+    setPayments(proPayments || []);
     const priceMap: Record<string, string> = {};
     for (const c of proCases) {
       if (c?.appointmentId && typeof c?.servicePriceCents === 'number') {
@@ -189,6 +196,47 @@ export default function ExpertDashboard() {
     } finally {
       setDocsLoading(prev => ({ ...prev, [caseId]: false }));
     }
+  };
+
+  const loadMessagesForCase = async (caseId: string) => {
+    if (!caseId || messagesLoading[caseId]) return;
+    setMessagesLoading(prev => ({ ...prev, [caseId]: true }));
+    try {
+      const items = await listMessagesByCase(caseId);
+      setMessagesByCase(prev => ({ ...prev, [caseId]: items }));
+    } finally {
+      setMessagesLoading(prev => ({ ...prev, [caseId]: false }));
+    }
+  };
+
+  const sendMessageForCase = async (caseItem: any) => {
+    const caseId = caseItem?.id;
+    if (!caseId) return;
+    const body = (messageDraftByCase[caseId] || '').trim();
+    if (!body) return;
+    await createMessage({
+      caseId,
+      clientOwner: caseItem.clientOwner,
+      proOwner: caseItem.proOwner,
+      senderRole: 'PRO',
+      body,
+    });
+    setMessageDraftByCase(prev => ({ ...prev, [caseId]: '' }));
+    await loadMessagesForCase(caseId);
+  };
+
+  const buildTimeline = (caseItem: any, appt: any, casePayments: any[]) => {
+    const events: Array<{ label: string; date?: string }> = [];
+    if (caseItem?.createdAt) events.push({ label: 'Caso creado', date: caseItem.createdAt });
+    if (appt?.requestedStart) events.push({ label: 'Solicitud de cita', date: appt.requestedStart });
+    if (appt?.status === AppointmentStatus.ACCEPTED) events.push({ label: 'Cita aceptada', date: appt?.requestedStart });
+    if (appt?.meetingId || appt?.meetingData) events.push({ label: 'Videollamada habilitada' });
+    for (const p of casePayments) {
+      const label = p.type === PaymentType.SERVICE_50_FIRST ? 'Pago 50% inicial' : 'Pago 50% final';
+      const suffix = p.status === PaymentStatus.PAID ? ' (pagado)' : ' (pendiente)';
+      events.push({ label: `${label}${suffix}` });
+    }
+    return events;
   };
 
   const loadSurveyForClient = async (clientOwner: string) => {
@@ -700,6 +748,17 @@ export default function ExpertDashboard() {
                 >
                   Ver Encuesta
                 </button>
+                <button
+                  onClick={() => {
+                    const caseForAppt = cases.find(c => c.appointmentId === appt.id);
+                    if (!caseForAppt) return;
+                    setChatOpenByCase(prev => ({ ...prev, [caseForAppt.id]: !prev[caseForAppt.id] }));
+                    loadMessagesForCase(caseForAppt.id);
+                  }}
+                  style={{ background: '#7dd3fc', border: 'none', padding: '6px 10px', fontWeight: 'bold', cursor: 'pointer' }}
+                >
+                  Mensajes
+                </button>
               </div>
               {(() => {
                 const caseForAppt = cases.find(c => c.appointmentId === appt.id);
@@ -727,6 +786,61 @@ export default function ExpertDashboard() {
                         </li>
                       ))}
                     </ul>
+                  </div>
+                );
+              })()}
+              {(() => {
+                const caseForAppt = cases.find(c => c.appointmentId === appt.id);
+                if (!caseForAppt) return null;
+                const apptPayments = payments.filter(p => p.caseId === caseForAppt.id);
+                const events = buildTimeline(caseForAppt, appt, apptPayments);
+                return (
+                  <div style={{ marginTop: '12px', background: '#001a2c', border: '1px solid #00e5ff', padding: '12px', borderRadius: '8px' }}>
+                    <strong>Línea de tiempo:</strong>
+                    <div style={{ marginTop: '6px', display: 'grid', gap: '6px' }}>
+                      {events.map((e, idx) => (
+                        <div key={`${caseForAppt.id}-evt-${idx}`} style={{ color: '#9adfff' }}>
+                          • {e.label}{e.date ? ` — ${e.date}` : ''}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+              {(() => {
+                const caseForAppt = cases.find(c => c.appointmentId === appt.id);
+                if (!caseForAppt || !chatOpenByCase[caseForAppt.id]) return null;
+                const msgs = messagesByCase[caseForAppt.id] || [];
+                return (
+                  <div style={{ marginTop: '12px', background: '#001a2c', border: '1px solid #00e5ff', padding: '12px', borderRadius: '8px' }}>
+                    <strong>Chat del caso</strong>
+                    {messagesLoading[caseForAppt.id] && <p>Cargando mensajes...</p>}
+                    {!messagesLoading[caseForAppt.id] && (
+                      <div style={{ marginTop: '8px', display: 'grid', gap: '6px' }}>
+                        {msgs.length === 0 && <p>No hay mensajes aún.</p>}
+                        {msgs.map((m: any) => (
+                          <div key={m.id} style={{ background: '#003a57', padding: '8px', borderRadius: '6px' }}>
+                            <div style={{ fontSize: '0.85rem', color: '#9adfff' }}>{m.senderRole} — {m.createdAt || ''}</div>
+                            <div>{m.body}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div style={{ marginTop: '10px', display: 'flex', gap: '8px' }}>
+                      <input
+                        type="text"
+                        placeholder="Escribe un mensaje"
+                        value={messageDraftByCase[caseForAppt.id] || ''}
+                        onChange={e => setMessageDraftByCase(prev => ({ ...prev, [caseForAppt.id]: e.target.value }))}
+                        style={{ flex: 1 }}
+                      />
+                      <button
+                        onClick={() => sendMessageForCase(caseForAppt)}
+                        style={{ background: '#00e5ff', border: 'none', padding: '6px 10px', fontWeight: 'bold', cursor: 'pointer' }}
+                      >
+                        Enviar
+                      </button>
+                    </div>
                   </div>
                 );
               })()}
