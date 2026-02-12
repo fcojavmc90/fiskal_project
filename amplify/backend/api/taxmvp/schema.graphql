@@ -175,7 +175,7 @@ type Payment
   @auth(
     rules: [
       { allow: owner, ownerField: "clientOwner", operations: [create, read, update] }
-      { allow: owner, ownerField: "proOwner", operations: [read] }
+      { allow: owner, ownerField: "proOwner", operations: [create, read] }
     ]
   ) {
   id: ID!

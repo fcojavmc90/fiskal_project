@@ -1,12 +1,12 @@
 "use client";
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { getCurrentUser, fetchUserAttributes } from 'aws-amplify/auth';
-import { listAgendaByProfessional, listAppointmentsByClient, listCasesByClientOwner, listProfessionalProfiles, listSurveyResponsesByOwner, updateAppointment, updateProfessionalAgenda, updateProfessionalProfile, updateSurveyResponse } from '../../lib/graphqlClient';
-import { AppointmentStatus, ProfessionalAgendaStatus } from '../../API';
+import { listAgendaByProfessional, listAppointmentsByClient, listCasesByClientOwner, listPaymentsByClientOwner, listProfessionalProfiles, listSurveyResponsesByOwner, updateAppointment, updateProfessionalAgenda, updateProfessionalProfile, updateSurveyResponse } from '../../lib/graphqlClient';
+import { AppointmentStatus, PaymentStatus, PaymentType, ProfessionalAgendaStatus } from '../../API';
 import { useRouter } from 'next/navigation';
 import { isAuthBypassed } from '../../lib/authBypass';
 import { ensureAmplifyConfigured } from '../../lib/amplifyClient';
-import Link from 'next/link';
+import ChimeCall from '../../components/ChimeCall';
 
 export default function ClientDashboard() {
   ensureAmplifyConfigured();
@@ -19,6 +19,24 @@ export default function ClientDashboard() {
   const [surveyInfo, setSurveyInfo] = useState<any>(null);
   const [surveyLoading, setSurveyLoading] = useState(false);
   const [surveyError, setSurveyError] = useState('');
+  const [callModalAppt, setCallModalAppt] = useState<any | null>(null);
+  const [callFullscreen, setCallFullscreen] = useState(false);
+  const callModalRef = useRef<HTMLDivElement | null>(null);
+  const [payments, setPayments] = useState<any[]>([]);
+  const [paymentsLoading, setPaymentsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!callModalAppt) return;
+    const handler = () => {
+      const isFs = document.fullscreenElement === callModalRef.current;
+      setCallFullscreen(isFs);
+    };
+    document.addEventListener('fullscreenchange', handler);
+    return () => {
+      document.removeEventListener('fullscreenchange', handler);
+      setCallFullscreen(false);
+    };
+  }, [callModalAppt]);
 
   const sortedAppointments = useMemo(() => {
     return [...appointments].sort((a: any, b: any) => (a.requestedStart || '').localeCompare(b.requestedStart || ''));
@@ -40,6 +58,10 @@ export default function ClientDashboard() {
           setAppointments(active);
           const caseItems = await listCasesByClientOwner(sub);
           setCases(caseItems);
+          setPaymentsLoading(true);
+          const paymentItems = await listPaymentsByClientOwner(sub);
+          setPayments(paymentItems || []);
+          setPaymentsLoading(false);
           await backfillSurveyAssignments(sub, active);
         } catch (err) {
           console.warn('Dashboard data load failed:', err);
@@ -145,6 +167,30 @@ export default function ClientDashboard() {
     alert('Cambio aceptado.');
   };
 
+  const openPaymentLink = async (payment: any) => {
+    const checkoutId = payment?.squareCheckoutId;
+    if (!checkoutId) {
+      alert('No hay enlace de pago disponible.');
+      return;
+    }
+    try {
+      const res = await fetch(`/api/square/checkout?id=${encodeURIComponent(checkoutId)}`);
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'No se pudo obtener el enlace de pago');
+        return;
+      }
+      const url = data?.url;
+      if (!url) {
+        alert('Enlace de pago inválido');
+        return;
+      }
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } catch (err: any) {
+      alert(err?.message || 'Error abriendo el pago');
+    }
+  };
+
   return (
     <div style={{ background: '#001a2c', minHeight: '100vh', padding: '40px', color: 'white' }}>
       <h1 style={{ color: '#00e5ff' }}>Dashboard Cliente</h1>
@@ -189,9 +235,12 @@ export default function ClientDashboard() {
                     <div style={{ color: '#9adfff' }}>Estado: {appt.status}</div>
                   </div>
                   {appt.status === AppointmentStatus.ACCEPTED ? (
-                    <Link href={`/call?appt=${appt.id}&role=client`} style={{ background: '#00ff88', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold', color: '#001a2c', textDecoration: 'none' }}>
+                    <button
+                      onClick={() => setCallModalAppt(appt)}
+                      style={{ background: '#00ff88', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold', color: '#001a2c', border: 'none', cursor: 'pointer' }}
+                    >
                       Entrar a llamada
-                    </Link>
+                    </button>
                   ) : (
                     <span style={{ color: '#7fbfdd' }}>Disponible al aceptar</span>
                   )}
@@ -255,8 +304,80 @@ export default function ClientDashboard() {
                 <p><strong>Caso:</strong> {c.caseNumber}</p>
                 <p><strong>Estado:</strong> {c.status}</p>
                 <p><strong>Precio:</strong> {c.servicePriceCents ? `$${(c.servicePriceCents / 100).toFixed(2)}` : 'Por definir'}</p>
+                <div style={{ marginTop: '10px' }}>
+                  <strong>Pagos:</strong>
+                  {paymentsLoading && <p>Cargando pagos...</p>}
+                  {!paymentsLoading && (() => {
+                    const casePayments = payments.filter(p => p.caseId === c.id);
+                    if (!casePayments.length) return <p>No hay pagos solicitados aún.</p>;
+                    return (
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '6px' }}>
+                        {casePayments.map(p => {
+                          const label = p.type === PaymentType.SERVICE_50_FIRST ? 'Pagar 50% inicial' : 'Pagar 50% final';
+                          const isPaid = p.status === PaymentStatus.PAID;
+                          return (
+                            <button
+                              key={p.id}
+                              onClick={() => openPaymentLink(p)}
+                              disabled={isPaid}
+                              style={{
+                                background: isPaid ? '#4ade80' : '#00e5ff',
+                                border: 'none',
+                                padding: '6px 10px',
+                                fontWeight: 'bold',
+                                cursor: isPaid ? 'default' : 'pointer',
+                                color: '#001a2c',
+                              }}
+                            >
+                              {isPaid ? `${label} (pagado)` : label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+      {callModalAppt && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 70 }}>
+          <div
+            ref={callModalRef}
+            style={{
+              background: '#003a57',
+              padding: callFullscreen ? '16px' : '20px',
+              borderRadius: callFullscreen ? '0' : '12px',
+              border: '1px solid #00e5ff',
+              maxWidth: callFullscreen ? '100%' : '1000px',
+              width: '100%',
+              height: callFullscreen ? '100%' : 'auto',
+              position: 'relative'
+            }}
+          >
+            <button
+              onClick={() => {
+                const el = callModalRef.current;
+                if (!el) return;
+                if (document.fullscreenElement) {
+                  document.exitFullscreen?.();
+                } else {
+                  el.requestFullscreen?.();
+                }
+              }}
+              style={{ position: 'absolute', top: '10px', left: '10px', background: '#00e5ff', border: 'none', padding: '4px 8px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '6px', color: '#001a2c' }}
+            >
+              Pantalla completa
+            </button>
+            <button
+              onClick={() => setCallModalAppt(null)}
+              style={{ position: 'absolute', top: '10px', right: '10px', background: '#ff6b6b', border: 'none', padding: '4px 8px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '6px' }}
+            >
+              X
+            </button>
+            <ChimeCall appointmentId={callModalAppt.id} role="client" embedded fullHeight={callFullscreen} onLeave={() => setCallModalAppt(null)} />
           </div>
         </div>
       )}

@@ -1,9 +1,9 @@
 "use client";
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { getCurrentUser, fetchUserAttributes } from 'aws-amplify/auth';
 import { getUrl } from '@aws-amplify/storage';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import ChimeCall from '../../components/ChimeCall';
 import { AppointmentStatus, CaseStatus, PaymentStatus, PaymentType, ProfessionalAgendaStatus } from '../../API';
 import { createPayment, createProfessionalAgenda, deleteProfessionalAgenda, getUserProfileByOwner, listAgendaByProfessional, listAppointmentsByPro, listCaseDocumentsByCase, listCasesByProOwner, listSurveyResponsesByOwnerAndPro, listSurveyResponsesByProOwner, updateAppointment, updateCase, updateProfessionalAgenda } from '../../lib/graphqlClient';
 import { isAuthBypassed } from '../../lib/authBypass';
@@ -47,7 +47,7 @@ export default function ExpertDashboard() {
   const [rescheduleDate, setRescheduleDate] = useState('');
   const [rescheduleTime, setRescheduleTime] = useState('');
   const [rescheduleEndTime, setRescheduleEndTime] = useState('');
-  const [servicePrice, setServicePrice] = useState('');
+  const [servicePriceByAppt, setServicePriceByAppt] = useState<Record<string, string>>({});
   const [docsByCase, setDocsByCase] = useState<Record<string, any[]>>({});
   const [docsLoading, setDocsLoading] = useState<Record<string, boolean>>({});
   const [surveyByClient, setSurveyByClient] = useState<Record<string, any | null>>({});
@@ -57,6 +57,23 @@ export default function ExpertDashboard() {
   const [surveyProLoading, setSurveyProLoading] = useState(false);
   const [surveyProError, setSurveyProError] = useState('');
   const [clientNames, setClientNames] = useState<Record<string, string>>({});
+  const [surveyModalClient, setSurveyModalClient] = useState<string | null>(null);
+  const [callModalAppt, setCallModalAppt] = useState<any | null>(null);
+  const [callFullscreen, setCallFullscreen] = useState(false);
+  const callModalRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!callModalAppt) return;
+    const handler = () => {
+      const isFs = document.fullscreenElement === callModalRef.current;
+      setCallFullscreen(isFs);
+    };
+    document.addEventListener('fullscreenchange', handler);
+    return () => {
+      document.removeEventListener('fullscreenchange', handler);
+      setCallFullscreen(false);
+    };
+  }, [callModalAppt]);
 
   useEffect(() => {
     const load = async () => {
@@ -97,6 +114,15 @@ export default function ExpertDashboard() {
     setSlots(sortedAgenda);
     const proCases = await listCasesByProOwner(sub);
     setCases(proCases);
+    const priceMap: Record<string, string> = {};
+    for (const c of proCases) {
+      if (c?.appointmentId && typeof c?.servicePriceCents === 'number') {
+        priceMap[c.appointmentId] = (c.servicePriceCents / 100).toString();
+      }
+    }
+    if (Object.keys(priceMap).length) {
+      setServicePriceByAppt(prev => ({ ...prev, ...priceMap }));
+    }
   };
 
   const hydrateClientNames = async (appts: any[]) => {
@@ -169,6 +195,7 @@ export default function ExpertDashboard() {
     if (!clientOwner || surveyLoading[clientOwner]) return;
     setSurveyLoading(prev => ({ ...prev, [clientOwner]: true }));
     setSurveyError(prev => ({ ...prev, [clientOwner]: '' }));
+    setSurveyModalClient(clientOwner);
     try {
       if (isAuthBypassed()) {
         const cached = localStorage.getItem('fiskal_survey_data');
@@ -538,9 +565,12 @@ export default function ExpertDashboard() {
                   <div style={{ color: '#9adfff' }}>Estado: {appt.status}</div>
                 </div>
                 {appt.status === AppointmentStatus.ACCEPTED ? (
-                  <Link href={`/call?appt=${appt.id}&role=pro`} style={{ background: '#00ff88', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold', color: '#001a2c', textDecoration: 'none' }}>
+                  <button
+                    onClick={() => setCallModalAppt(appt)}
+                    style={{ background: '#00ff88', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold', color: '#001a2c', border: 'none', cursor: 'pointer' }}
+                  >
                     Entrar a llamada
-                  </Link>
+                  </button>
                 ) : (
                   <span style={{ color: '#7fbfdd' }}>Disponible al aceptar</span>
                 )}
@@ -596,15 +626,24 @@ export default function ExpertDashboard() {
               <p><strong>Fecha/Hora:</strong> {appt.requestedStart}</p>
               <div style={{ marginBottom: '10px' }}>
                 <label>Precio del servicio (USD)</label>
-                <input type="number" min="0" placeholder="Ej: 1000" value={servicePrice} onChange={e => setServicePrice(e.target.value)} style={{ marginLeft: '10px' }} />
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="Ej: 1000"
+                  value={servicePriceByAppt[appt.id] || ''}
+                  onChange={e => setServicePriceByAppt(prev => ({ ...prev, [appt.id]: e.target.value }))}
+                  style={{ marginLeft: '10px' }}
+                />
                 <button
                   onClick={async () => {
                     const caseForAppt = cases.find(c => c.appointmentId === appt.id);
                     if (!caseForAppt) return alert('No hay caso asociado.');
-                    const cents = Math.round(Number(servicePrice || '0') * 100);
+                    const rawValue = servicePriceByAppt[appt.id] || '';
+                    const cents = Math.round(Number(rawValue || '0') * 100);
                     if (!cents) return alert('Monto inválido');
                     await updateCase({ id: caseForAppt.id, servicePriceCents: cents, currency: 'USD', status: CaseStatus.IN_PROGRESS });
                     alert('Precio guardado.');
+                    setServicePriceByAppt(prev => ({ ...prev, [appt.id]: (cents / 100).toString() }));
                     refresh(proSub);
                   }}
                   style={{ marginLeft: '10px', background: '#00ff88', border: 'none', padding: '6px 10px', fontWeight: 'bold', cursor: 'pointer' }}
@@ -613,7 +652,6 @@ export default function ExpertDashboard() {
                 </button>
               </div>
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                <input type="text" placeholder="Link de reunión (opcional)" value={meetingLink} onChange={e => setMeetingLink(e.target.value)} style={{ minWidth: '240px' }} />
                 <button onClick={() => acceptAppointment(appt)} style={{ background: '#00ff88', border: 'none', padding: '6px 10px', fontWeight: 'bold', cursor: 'pointer' }}>Aceptar</button>
                 {appt.status !== 'COMPLETED' && (
                   <button
@@ -664,31 +702,6 @@ export default function ExpertDashboard() {
                 </button>
               </div>
               {(() => {
-                const loading = surveyLoading[appt.clientOwner];
-                const error = surveyError[appt.clientOwner];
-                const payload = surveyByClient[appt.clientOwner];
-                if (loading) return <p style={{ marginTop: '10px' }}>Cargando encuesta...</p>;
-                if (error) return <p style={{ marginTop: '10px', color: '#ffb4b4' }}>{error}</p>;
-                if (payload === undefined) return null;
-                if (!payload) return <p style={{ marginTop: '10px' }}>No hay encuesta disponible.</p>;
-                const answers = payload?.answers || {};
-                const submittedAt = payload?.submittedAt || '';
-                return (
-                  <div style={{ marginTop: '10px', background: '#001a2c', border: '1px solid #00e5ff', padding: '12px', borderRadius: '8px' }}>
-                    <strong>Encuesta:</strong>
-                    {submittedAt && <div style={{ color: '#9bb3c7', fontSize: '0.9rem' }}>Enviada: {submittedAt}</div>}
-                    <div style={{ marginTop: '8px', display: 'grid', gap: '8px' }}>
-                      {SURVEY_QUESTIONS.map(q => (
-                        <div key={q.id}>
-                          <div style={{ color: '#00e5ff', fontSize: '0.9rem' }}>{q.label}</div>
-                          <div>{answers[q.id] || 'Sin respuesta'}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })()}
-              {(() => {
                 const caseForAppt = cases.find(c => c.appointmentId === appt.id);
                 if (!caseForAppt) return null;
                 const docs = docsByCase[caseForAppt.id];
@@ -734,6 +747,84 @@ export default function ExpertDashboard() {
               <button onClick={() => setRescheduleOpen(false)} style={{ background: '#7dd3fc', border: 'none', padding: '6px 10px', fontWeight: 'bold', cursor: 'pointer' }}>Cancelar</button>
               <button onClick={() => proposeMove(rescheduleTarget)} style={{ background: '#ffaa00', border: 'none', padding: '6px 10px', fontWeight: 'bold', cursor: 'pointer' }}>Confirmar</button>
             </div>
+          </div>
+        </div>
+      )}
+      {surveyModalClient && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60, padding: '24px' }}>
+          <div style={{ background: '#003a57', padding: '20px', borderRadius: '12px', border: '1px solid #00e5ff', maxWidth: '720px', width: '100%', position: 'relative', maxHeight: '85vh', overflow: 'hidden' }}>
+            <button
+              onClick={() => setSurveyModalClient(null)}
+              style={{ position: 'absolute', top: '10px', right: '10px', background: '#ff6b6b', border: 'none', padding: '4px 8px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '6px' }}
+            >
+              X
+            </button>
+            <div style={{ maxHeight: 'calc(85vh - 60px)', overflowY: 'auto', paddingRight: '6px' }}>
+              <h3 style={{ marginTop: 0 }}>Encuesta del cliente</h3>
+              {(() => {
+                const loading = surveyLoading[surveyModalClient];
+                const error = surveyError[surveyModalClient];
+                const payload = surveyByClient[surveyModalClient];
+                if (loading) return <p>Cargando encuesta...</p>;
+                if (error) return <p style={{ color: '#ffb4b4' }}>{error}</p>;
+                if (payload === undefined) return <p>No se ha cargado la encuesta.</p>;
+                if (!payload) return <p>No hay encuesta disponible.</p>;
+                const answers = payload?.answers || {};
+                const submittedAt = payload?.submittedAt || '';
+                return (
+                  <div style={{ marginTop: '10px', background: '#001a2c', border: '1px solid #00e5ff', padding: '12px', borderRadius: '8px' }}>
+                    {submittedAt && <div style={{ color: '#9bb3c7', fontSize: '0.9rem' }}>Enviada: {submittedAt}</div>}
+                    <div style={{ marginTop: '8px', display: 'grid', gap: '8px' }}>
+                      {SURVEY_QUESTIONS.map(q => (
+                        <div key={q.id}>
+                          <div style={{ color: '#00e5ff', fontSize: '0.9rem' }}>{q.label}</div>
+                          <div>{answers[q.id] || 'Sin respuesta'}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
+      {callModalAppt && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 70 }}>
+          <div
+            ref={callModalRef}
+            style={{
+              background: '#003a57',
+              padding: callFullscreen ? '16px' : '20px',
+              borderRadius: callFullscreen ? '0' : '12px',
+              border: '1px solid #00e5ff',
+              maxWidth: callFullscreen ? '100%' : '1000px',
+              width: '100%',
+              height: callFullscreen ? '100%' : 'auto',
+              position: 'relative'
+            }}
+          >
+            <button
+              onClick={() => {
+                const el = callModalRef.current;
+                if (!el) return;
+                if (document.fullscreenElement) {
+                  document.exitFullscreen?.();
+                } else {
+                  el.requestFullscreen?.();
+                }
+              }}
+              style={{ position: 'absolute', top: '10px', left: '10px', background: '#00e5ff', border: 'none', padding: '4px 8px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '6px', color: '#001a2c' }}
+            >
+              Pantalla completa
+            </button>
+            <button
+              onClick={() => setCallModalAppt(null)}
+              style={{ position: 'absolute', top: '10px', right: '10px', background: '#ff6b6b', border: 'none', padding: '4px 8px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '6px' }}
+            >
+              X
+            </button>
+            <ChimeCall appointmentId={callModalAppt.id} role="pro" embedded fullHeight={callFullscreen} onLeave={() => setCallModalAppt(null)} />
           </div>
         </div>
       )}

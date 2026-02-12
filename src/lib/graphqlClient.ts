@@ -416,6 +416,14 @@ export async function listPaymentsBySquareId(id: string) {
   return res.data?.listPayments?.items ?? [];
 }
 
+export async function listPaymentsByClientOwner(owner: string) {
+  const res = await getClient().graphql({
+    query: listPaymentsQuery,
+    variables: { filter: { clientOwner: { eq: owner } } },
+  });
+  return res.data?.listPayments?.items ?? [];
+}
+
 export async function listCaseDocumentsByCase(caseId: string) {
   const res = await getClient().graphql({
     query: caseDocumentsByCaseQuery,

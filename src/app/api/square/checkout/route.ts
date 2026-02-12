@@ -48,3 +48,32 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message || 'Error' }, { status: 500 });
   }
 }
+
+export async function GET(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id') || '';
+    if (!id) {
+      return NextResponse.json({ error: 'Falta id de pago' }, { status: 400 });
+    }
+    const isProd = (process.env.SQUARE_ENV || 'sandbox') === 'production';
+    const baseUrl = isProd ? PROD_BASE : SANDBOX_BASE;
+    const token = process.env.SQUARE_ACCESS_TOKEN || '';
+
+    const res = await fetch(`${baseUrl}/v2/online-checkout/payment-links/${id}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    const body = await res.json();
+    if (!res.ok) {
+      return NextResponse.json({ error: `Status code: ${res.status}\nBody: ${JSON.stringify(body, null, 2)}` }, { status: 500 });
+    }
+    const url = body?.payment_link?.url ?? '';
+    return NextResponse.json({ url, id });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || 'Error' }, { status: 500 });
+  }
+}
