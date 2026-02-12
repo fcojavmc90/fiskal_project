@@ -4,6 +4,7 @@ import { getCurrentUser, fetchUserAttributes } from 'aws-amplify/auth';
 import { getUrl } from '@aws-amplify/storage';
 import { useRouter } from 'next/navigation';
 import ChimeCall from '../../components/ChimeCall';
+import Sidebar from '../../components/Sidebar';
 import { AppointmentStatus, CaseStatus, PaymentStatus, PaymentType, ProfessionalAgendaStatus } from '../../API';
 import { createMessage, createPayment, createProfessionalAgenda, deleteProfessionalAgenda, getUserProfileByOwner, listAgendaByProfessional, listAppointmentsByPro, listCaseDocumentsByCase, listCasesByProOwner, listMessagesByCase, listPaymentsByProOwner, listSurveyResponsesByOwnerAndPro, listSurveyResponsesByProOwner, updateAppointment, updateCase, updateProfessionalAgenda } from '../../lib/graphqlClient';
 import { isAuthBypassed } from '../../lib/authBypass';
@@ -207,6 +208,21 @@ export default function ExpertDashboard() {
     } finally {
       setMessagesLoading(prev => ({ ...prev, [caseId]: false }));
     }
+  };
+
+  const shortName = (full?: string) => {
+    const raw = (full || '').trim();
+    if (!raw) return 'Cliente';
+    const parts = raw.split(/\s+/).map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase());
+    if (parts.length === 1) return parts[0];
+    return `${parts[0]} ${parts[1][0].toUpperCase()}.`;
+  };
+
+  const formatDateTime = (value?: string) => {
+    if (!value) return '';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return value;
+    return parsed.toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' });
   };
 
   const sendMessageForCase = async (caseItem: any) => {
@@ -574,8 +590,10 @@ export default function ExpertDashboard() {
   };
 
   return (
-    <div style={{ background: '#001a2c', minHeight: '100vh', padding: '40px', color: 'white' }}>
-      <h1 style={{ color: '#00e5ff' }}>Dashboard Profesional</h1>
+    <div style={{ display: 'flex', background: '#001a2c', minHeight: '100vh', color: 'white' }}>
+      <Sidebar dashboardHref="/expert-dashboard" />
+      <div style={{ flex: 1, padding: '40px' }}>
+        <h1 style={{ color: '#00e5ff' }}>Dashboard Profesional</h1>
       <div style={{ background: '#003a57', padding: '20px', borderRadius: '12px', border: '1px solid #00e5ff', marginTop: '20px' }}>
         <h3>Crear horarios disponibles</h3>
         <div style={{ display: 'flex', gap: '10px' }}>
@@ -820,7 +838,10 @@ export default function ExpertDashboard() {
                         {msgs.length === 0 && <p>No hay mensajes aún.</p>}
                         {msgs.map((m: any) => (
                           <div key={m.id} style={{ background: '#003a57', padding: '8px', borderRadius: '6px' }}>
-                            <div style={{ fontSize: '0.85rem', color: '#9adfff' }}>{m.senderRole} — {m.createdAt || ''}</div>
+                            <div style={{ fontSize: '0.85rem', color: '#9adfff' }}>
+                              {m.senderRole === 'CLIENT' ? shortName(clientNames[caseForAppt.clientOwner]) : 'Tú'}
+                              {m.createdAt ? ` — ${formatDateTime(m.createdAt)}` : ''}
+                            </div>
                             <div>{m.body}</div>
                           </div>
                         ))}
@@ -942,6 +963,7 @@ export default function ExpertDashboard() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

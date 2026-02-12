@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { createProfessionalProfile, createUserProfile, getProfessionalProfileByOwner, getUserProfileByOwner } from '../lib/graphqlClient';
 import { ProType, UserRole } from '../API';
 import Link from 'next/link';
+import Image from 'next/image';
 import { isAuthBypassed } from '../lib/authBypass';
 import { ensureAmplifyConfigured } from '../lib/amplifyClient';
 
@@ -107,6 +108,25 @@ export default function HomePage() {
   return (
     <main className="fk-page">
       <div className="fk-card">
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+          <Image
+            src="/fiskal-logo.png"
+            alt="Fiskal Solutions"
+            width={180}
+            height={54}
+            style={{
+              width: '180px',
+              height: 'auto',
+              objectFit: 'contain',
+              background: 'rgba(255,255,255,0.08)',
+              border: '1px solid rgba(255,255,255,0.6)',
+              borderRadius: '12px',
+              padding: '8px 10px',
+              boxShadow: '0 0 12px rgba(255,255,255,0.15)',
+            }}
+            priority
+          />
+        </div>
         <h1 className="fk-title">Iniciar Sesión</h1>
         {error && <div className="fk-error">{error}</div>}
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

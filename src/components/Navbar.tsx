@@ -60,7 +60,7 @@ export default function Navbar() {
   return (
     <nav className="fk-nav">
       <div className="fk-nav-inner">
-        <Link href="/" className="fk-brand">FISKAL</Link>
+        <div className="fk-brand" />
         <div className="fk-nav-links">
           {user ? (
             <>

@@ -1,12 +1,13 @@
 "use client";
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { getCurrentUser, fetchUserAttributes } from 'aws-amplify/auth';
-import { createMessage, listAgendaByProfessional, listAppointmentsByClient, listCasesByClientOwner, listMessagesByCase, listPaymentsByClientOwner, listProfessionalProfiles, listSurveyResponsesByOwner, updateAppointment, updateProfessionalAgenda, updateProfessionalProfile, updateSurveyResponse } from '../../lib/graphqlClient';
+import { createMessage, getUserProfileByOwner, listAgendaByProfessional, listAppointmentsByClient, listCasesByClientOwner, listMessagesByCase, listPaymentsByClientOwner, listProfessionalProfiles, listSurveyResponsesByOwner, updateAppointment, updateProfessionalAgenda, updateProfessionalProfile, updateSurveyResponse } from '../../lib/graphqlClient';
 import { AppointmentStatus, PaymentStatus, PaymentType, ProfessionalAgendaStatus } from '../../API';
 import { useRouter } from 'next/navigation';
 import { isAuthBypassed } from '../../lib/authBypass';
 import { ensureAmplifyConfigured } from '../../lib/amplifyClient';
 import ChimeCall from '../../components/ChimeCall';
+import Sidebar from '../../components/Sidebar';
 
 export default function ClientDashboard() {
   ensureAmplifyConfigured();
@@ -28,6 +29,8 @@ export default function ClientDashboard() {
   const [messagesLoading, setMessagesLoading] = useState<Record<string, boolean>>({});
   const [messageDraftByCase, setMessageDraftByCase] = useState<Record<string, string>>({});
   const [chatOpenByCase, setChatOpenByCase] = useState<Record<string, boolean>>({});
+  const [clientDisplayName, setClientDisplayName] = useState('Cliente');
+  const [proNamesByOwner, setProNamesByOwner] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!callModalAppt) return;
@@ -56,12 +59,23 @@ export default function ClientDashboard() {
         const user = await getCurrentUser();
         const attr = await fetchUserAttributes();
         const sub = attr.sub ?? user.userId ?? '';
+        const profile = await getUserProfileByOwner(sub);
+        const first = profile?.firstName ?? '';
+        const last = profile?.lastName ?? '';
+        const rawName = (first || last) ? `${first} ${last}`.trim() : (profile?.email ?? attr.email ?? 'Cliente');
+        setClientDisplayName(rawName);
         try {
           const items = await listAppointmentsByClient(sub);
           const active = items.filter((a: any) => a.status !== AppointmentStatus.CANCELLED);
           setAppointments(active);
           const caseItems = await listCasesByClientOwner(sub);
           setCases(caseItems);
+          const pros = await listProfessionalProfiles();
+          const map: Record<string, string> = {};
+          for (const p of pros) {
+            if (p?.owner) map[p.owner] = p.displayName || p.owner;
+          }
+          setProNamesByOwner(map);
           setPaymentsLoading(true);
           const paymentItems = await listPaymentsByClientOwner(sub);
           setPayments(paymentItems || []);
@@ -198,6 +212,21 @@ export default function ClientDashboard() {
     await loadMessagesForCase(caseId);
   };
 
+  const shortName = (full?: string) => {
+    const raw = (full || '').trim();
+    if (!raw) return 'Cliente';
+    const parts = raw.split(/\s+/).map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase());
+    if (parts.length === 1) return parts[0];
+    return `${parts[0]} ${parts[1][0].toUpperCase()}.`;
+  };
+
+  const formatDateTime = (value?: string) => {
+    if (!value) return '';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return value;
+    return parsed.toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' });
+  };
+
   const buildTimeline = (caseItem: any, appt: any, casePayments: any[]) => {
     const events: Array<{ label: string; date?: string }> = [];
     if (caseItem?.createdAt) events.push({ label: 'Caso creado', date: caseItem.createdAt });
@@ -221,8 +250,10 @@ export default function ClientDashboard() {
   };
 
   return (
-    <div style={{ background: '#001a2c', minHeight: '100vh', padding: '40px', color: 'white' }}>
-      <h1 style={{ color: '#00e5ff' }}>Dashboard Cliente</h1>
+    <div style={{ display: 'flex', background: '#001a2c', minHeight: '100vh', color: 'white' }}>
+      <Sidebar dashboardHref="/dashboard-client" />
+      <div style={{ flex: 1, padding: '40px' }}>
+        <h1 style={{ color: '#00e5ff' }}>Dashboard Cliente</h1>
       {loading && <p>Cargando...</p>}
       {!loading && authError && (
         <div style={{ marginTop: '12px', background: '#8b1e1e', padding: '10px 12px', borderRadius: '8px' }}>
@@ -395,7 +426,12 @@ export default function ClientDashboard() {
                           {messagesByCase[c.id]?.length === 0 && <p>No hay mensajes aún.</p>}
                           {(messagesByCase[c.id] || []).map((m: any) => (
                             <div key={m.id} style={{ background: '#003a57', padding: '8px', borderRadius: '6px' }}>
-                              <div style={{ fontSize: '0.85rem', color: '#9adfff' }}>{m.senderRole} — {m.createdAt || ''}</div>
+                              <div style={{ fontSize: '0.85rem', color: '#9adfff' }}>
+                                {m.senderRole === 'CLIENT'
+                                  ? shortName(clientDisplayName)
+                                  : shortName(proNamesByOwner[c.proOwner] || 'Profesional')}
+                                {m.createdAt ? ` — ${formatDateTime(m.createdAt)}` : ''}
+                              </div>
                               <div>{m.body}</div>
                             </div>
                           ))}
@@ -463,6 +499,7 @@ export default function ClientDashboard() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
