@@ -587,6 +587,81 @@ export const onDeletePayment = /* GraphQL */ `subscription OnDeletePayment(
   APITypes.OnDeletePaymentSubscriptionVariables,
   APITypes.OnDeletePaymentSubscription
 >;
+export const onCreateMessage = /* GraphQL */ `subscription OnCreateMessage(
+  $filter: ModelSubscriptionMessageFilterInput
+  $clientOwner: String
+  $proOwner: String
+) {
+  onCreateMessage(
+    filter: $filter
+    clientOwner: $clientOwner
+    proOwner: $proOwner
+  ) {
+    id
+    caseId
+    clientOwner
+    proOwner
+    senderRole
+    body
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnCreateMessageSubscriptionVariables,
+  APITypes.OnCreateMessageSubscription
+>;
+export const onUpdateMessage = /* GraphQL */ `subscription OnUpdateMessage(
+  $filter: ModelSubscriptionMessageFilterInput
+  $clientOwner: String
+  $proOwner: String
+) {
+  onUpdateMessage(
+    filter: $filter
+    clientOwner: $clientOwner
+    proOwner: $proOwner
+  ) {
+    id
+    caseId
+    clientOwner
+    proOwner
+    senderRole
+    body
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnUpdateMessageSubscriptionVariables,
+  APITypes.OnUpdateMessageSubscription
+>;
+export const onDeleteMessage = /* GraphQL */ `subscription OnDeleteMessage(
+  $filter: ModelSubscriptionMessageFilterInput
+  $clientOwner: String
+  $proOwner: String
+) {
+  onDeleteMessage(
+    filter: $filter
+    clientOwner: $clientOwner
+    proOwner: $proOwner
+  ) {
+    id
+    caseId
+    clientOwner
+    proOwner
+    senderRole
+    body
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnDeleteMessageSubscriptionVariables,
+  APITypes.OnDeleteMessageSubscription
+>;
 export const onCreateProfessionalAgenda = /* GraphQL */ `subscription OnCreateProfessionalAgenda(
   $filter: ModelSubscriptionProfessionalAgendaFilterInput
   $professionalId: String

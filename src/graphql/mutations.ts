@@ -524,6 +524,66 @@ export const deletePayment = /* GraphQL */ `mutation DeletePayment(
   APITypes.DeletePaymentMutationVariables,
   APITypes.DeletePaymentMutation
 >;
+export const createMessage = /* GraphQL */ `mutation CreateMessage(
+  $input: CreateMessageInput!
+  $condition: ModelMessageConditionInput
+) {
+  createMessage(input: $input, condition: $condition) {
+    id
+    caseId
+    clientOwner
+    proOwner
+    senderRole
+    body
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.CreateMessageMutationVariables,
+  APITypes.CreateMessageMutation
+>;
+export const updateMessage = /* GraphQL */ `mutation UpdateMessage(
+  $input: UpdateMessageInput!
+  $condition: ModelMessageConditionInput
+) {
+  updateMessage(input: $input, condition: $condition) {
+    id
+    caseId
+    clientOwner
+    proOwner
+    senderRole
+    body
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.UpdateMessageMutationVariables,
+  APITypes.UpdateMessageMutation
+>;
+export const deleteMessage = /* GraphQL */ `mutation DeleteMessage(
+  $input: DeleteMessageInput!
+  $condition: ModelMessageConditionInput
+) {
+  deleteMessage(input: $input, condition: $condition) {
+    id
+    caseId
+    clientOwner
+    proOwner
+    senderRole
+    body
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.DeleteMessageMutationVariables,
+  APITypes.DeleteMessageMutation
+>;
 export const createProfessionalAgenda = /* GraphQL */ `mutation CreateProfessionalAgenda(
   $input: CreateProfessionalAgendaInput!
   $condition: ModelProfessionalAgendaConditionInput

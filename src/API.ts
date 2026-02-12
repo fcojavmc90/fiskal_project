@@ -639,6 +639,55 @@ export type DeletePaymentInput = {
   id: string,
 };
 
+export type CreateMessageInput = {
+  id?: string | null,
+  caseId: string,
+  clientOwner: string,
+  proOwner: string,
+  senderRole: string,
+  body: string,
+  createdAt?: string | null,
+};
+
+export type ModelMessageConditionInput = {
+  caseId?: ModelIDInput | null,
+  clientOwner?: ModelStringInput | null,
+  proOwner?: ModelStringInput | null,
+  senderRole?: ModelStringInput | null,
+  body?: ModelStringInput | null,
+  createdAt?: ModelStringInput | null,
+  and?: Array< ModelMessageConditionInput | null > | null,
+  or?: Array< ModelMessageConditionInput | null > | null,
+  not?: ModelMessageConditionInput | null,
+  updatedAt?: ModelStringInput | null,
+};
+
+export type Message = {
+  __typename: "Message",
+  id: string,
+  caseId: string,
+  clientOwner: string,
+  proOwner: string,
+  senderRole: string,
+  body: string,
+  createdAt?: string | null,
+  updatedAt: string,
+};
+
+export type UpdateMessageInput = {
+  id: string,
+  caseId?: string | null,
+  clientOwner?: string | null,
+  proOwner?: string | null,
+  senderRole?: string | null,
+  body?: string | null,
+  createdAt?: string | null,
+};
+
+export type DeleteMessageInput = {
+  id: string,
+};
+
 export type CreateProfessionalAgendaInput = {
   id?: string | null,
   professionalId: string,
@@ -884,6 +933,26 @@ export type ModelPaymentConnection = {
   nextToken?: string | null,
 };
 
+export type ModelMessageFilterInput = {
+  id?: ModelIDInput | null,
+  caseId?: ModelIDInput | null,
+  clientOwner?: ModelStringInput | null,
+  proOwner?: ModelStringInput | null,
+  senderRole?: ModelStringInput | null,
+  body?: ModelStringInput | null,
+  createdAt?: ModelStringInput | null,
+  updatedAt?: ModelStringInput | null,
+  and?: Array< ModelMessageFilterInput | null > | null,
+  or?: Array< ModelMessageFilterInput | null > | null,
+  not?: ModelMessageFilterInput | null,
+};
+
+export type ModelMessageConnection = {
+  __typename: "ModelMessageConnection",
+  items:  Array<Message | null >,
+  nextToken?: string | null,
+};
+
 export type ModelProfessionalAgendaFilterInput = {
   id?: ModelIDInput | null,
   professionalId?: ModelIDInput | null,
@@ -1115,6 +1184,19 @@ export type ModelSubscriptionPaymentFilterInput = {
   updatedAt?: ModelSubscriptionStringInput | null,
   and?: Array< ModelSubscriptionPaymentFilterInput | null > | null,
   or?: Array< ModelSubscriptionPaymentFilterInput | null > | null,
+  clientOwner?: ModelStringInput | null,
+  proOwner?: ModelStringInput | null,
+};
+
+export type ModelSubscriptionMessageFilterInput = {
+  id?: ModelSubscriptionIDInput | null,
+  caseId?: ModelSubscriptionIDInput | null,
+  senderRole?: ModelSubscriptionStringInput | null,
+  body?: ModelSubscriptionStringInput | null,
+  createdAt?: ModelSubscriptionStringInput | null,
+  updatedAt?: ModelSubscriptionStringInput | null,
+  and?: Array< ModelSubscriptionMessageFilterInput | null > | null,
+  or?: Array< ModelSubscriptionMessageFilterInput | null > | null,
   clientOwner?: ModelStringInput | null,
   proOwner?: ModelStringInput | null,
 };
@@ -1629,6 +1711,63 @@ export type DeletePaymentMutation = {
   } | null,
 };
 
+export type CreateMessageMutationVariables = {
+  input: CreateMessageInput,
+  condition?: ModelMessageConditionInput | null,
+};
+
+export type CreateMessageMutation = {
+  createMessage?:  {
+    __typename: "Message",
+    id: string,
+    caseId: string,
+    clientOwner: string,
+    proOwner: string,
+    senderRole: string,
+    body: string,
+    createdAt?: string | null,
+    updatedAt: string,
+  } | null,
+};
+
+export type UpdateMessageMutationVariables = {
+  input: UpdateMessageInput,
+  condition?: ModelMessageConditionInput | null,
+};
+
+export type UpdateMessageMutation = {
+  updateMessage?:  {
+    __typename: "Message",
+    id: string,
+    caseId: string,
+    clientOwner: string,
+    proOwner: string,
+    senderRole: string,
+    body: string,
+    createdAt?: string | null,
+    updatedAt: string,
+  } | null,
+};
+
+export type DeleteMessageMutationVariables = {
+  input: DeleteMessageInput,
+  condition?: ModelMessageConditionInput | null,
+};
+
+export type DeleteMessageMutation = {
+  deleteMessage?:  {
+    __typename: "Message",
+    id: string,
+    caseId: string,
+    clientOwner: string,
+    proOwner: string,
+    senderRole: string,
+    body: string,
+    createdAt?: string | null,
+    updatedAt: string,
+  } | null,
+};
+
 export type CreateProfessionalAgendaMutationVariables = {
   input: CreateProfessionalAgendaInput,
   condition?: ModelProfessionalAgendaConditionInput | null,
@@ -2050,6 +2189,48 @@ export type ListPaymentsQuery = {
   } | null,
 };
 
+export type GetMessageQueryVariables = {
+  id: string,
+};
+
+export type GetMessageQuery = {
+  getMessage?:  {
+    __typename: "Message",
+    id: string,
+    caseId: string,
+    clientOwner: string,
+    proOwner: string,
+    senderRole: string,
+    body: string,
+    createdAt?: string | null,
+    updatedAt: string,
+  } | null,
+};
+
+export type ListMessagesQueryVariables = {
+  filter?: ModelMessageFilterInput | null,
+  limit?: number | null,
+  nextToken?: string | null,
+};
+
+export type ListMessagesQuery = {
+  listMessages?:  {
+    __typename: "ModelMessageConnection",
+    items:  Array< {
+      __typename: "Message",
+      id: string,
+      caseId: string,
+      clientOwner: string,
+      proOwner: string,
+      senderRole: string,
+      body: string,
+      createdAt?: string | null,
+      updatedAt: string,
+    } | null >,
+    nextToken?: string | null,
+  } | null,
+};
+
 export type GetProfessionalAgendaQueryVariables = {
   id: string,
 };
@@ -2124,6 +2305,33 @@ export type CaseDocumentsByCaseQuery = {
       s3Key?: string | null,
       uploadedAt?: string | null,
       reviewNotes?: string | null,
+      createdAt?: string | null,
+      updatedAt: string,
+    } | null >,
+    nextToken?: string | null,
+  } | null,
+};
+
+export type MessagesByCaseQueryVariables = {
+  caseId: string,
+  createdAt?: ModelStringKeyConditionInput | null,
+  sortDirection?: ModelSortDirection | null,
+  filter?: ModelMessageFilterInput | null,
+  limit?: number | null,
+  nextToken?: string | null,
+};
+
+export type MessagesByCaseQuery = {
+  messagesByCase?:  {
+    __typename: "ModelMessageConnection",
+    items:  Array< {
+      __typename: "Message",
+      id: string,
+      caseId: string,
+      clientOwner: string,
+      proOwner: string,
+      senderRole: string,
+      body: string,
       createdAt?: string | null,
       updatedAt: string,
     } | null >,
@@ -2666,6 +2874,66 @@ export type OnDeletePaymentSubscription = {
     squareCheckoutId?: string | null,
     squarePaymentId?: string | null,
     createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
+export type OnCreateMessageSubscriptionVariables = {
+  filter?: ModelSubscriptionMessageFilterInput | null,
+  clientOwner?: string | null,
+  proOwner?: string | null,
+};
+
+export type OnCreateMessageSubscription = {
+  onCreateMessage?:  {
+    __typename: "Message",
+    id: string,
+    caseId: string,
+    clientOwner: string,
+    proOwner: string,
+    senderRole: string,
+    body: string,
+    createdAt?: string | null,
+    updatedAt: string,
+  } | null,
+};
+
+export type OnUpdateMessageSubscriptionVariables = {
+  filter?: ModelSubscriptionMessageFilterInput | null,
+  clientOwner?: string | null,
+  proOwner?: string | null,
+};
+
+export type OnUpdateMessageSubscription = {
+  onUpdateMessage?:  {
+    __typename: "Message",
+    id: string,
+    caseId: string,
+    clientOwner: string,
+    proOwner: string,
+    senderRole: string,
+    body: string,
+    createdAt?: string | null,
+    updatedAt: string,
+  } | null,
+};
+
+export type OnDeleteMessageSubscriptionVariables = {
+  filter?: ModelSubscriptionMessageFilterInput | null,
+  clientOwner?: string | null,
+  proOwner?: string | null,
+};
+
+export type OnDeleteMessageSubscription = {
+  onDeleteMessage?:  {
+    __typename: "Message",
+    id: string,
+    caseId: string,
+    clientOwner: string,
+    proOwner: string,
+    senderRole: string,
+    body: string,
+    createdAt?: string | null,
     updatedAt: string,
   } | null,
 };

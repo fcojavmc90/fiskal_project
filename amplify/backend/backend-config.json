@@ -91,13 +91,7 @@
       "service": "Lambda"
     }
   },
-  "hosting": {
-    "amplifyhosting": {
-      "providerPlugin": "awscloudformation",
-      "service": "amplifyhosting",
-      "type": "manual"
-    }
-  },
+  "hosting": {},
   "parameters": {
     "AMPLIFY_function_taxmvpd8e247c7d8e247c7PostConfirmation_GROUP": {
       "usedBy": [
@@ -144,22 +138,6 @@
         {
           "category": "function",
           "resourceName": "taxmvpfe99dd4fPostConfirmation"
-        }
-      ]
-    },
-    "AMPLIFY_hosting_amplifyhosting_appId": {
-      "usedBy": [
-        {
-          "category": "hosting",
-          "resourceName": "amplifyhosting"
-        }
-      ]
-    },
-    "AMPLIFY_hosting_amplifyhosting_type": {
-      "usedBy": [
-        {
-          "category": "hosting",
-          "resourceName": "amplifyhosting"
         }
       ]
     }

@@ -175,7 +175,7 @@ type Payment
   @auth(
     rules: [
       { allow: owner, ownerField: "clientOwner", operations: [create, read, update] }
-      { allow: owner, ownerField: "proOwner", operations: [read] }
+      { allow: owner, ownerField: "proOwner", operations: [create, read] }
     ]
   ) {
   id: ID!
@@ -190,6 +190,24 @@ type Payment
   status: PaymentStatus!
   squareCheckoutId: String
   squarePaymentId: String
+}
+
+type Message
+  @model
+  @auth(
+    rules: [
+      { allow: owner, ownerField: "clientOwner", operations: [create, read] }
+      { allow: owner, ownerField: "proOwner", operations: [create, read] }
+    ]
+  ) {
+  id: ID!
+  caseId: ID!
+    @index(name: "byCase", queryField: "messagesByCase", sortKeyFields: ["createdAt"])
+  clientOwner: String!
+  proOwner: String!
+  senderRole: String!
+  body: String!
+  createdAt: AWSDateTime
 }
 
 # ===== FISKAL MVP - PASO B: Agenda Profesional =====

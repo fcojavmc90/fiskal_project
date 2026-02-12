@@ -34,12 +34,6 @@
       },
       "api": {
         "taxmvp": {}
-      },
-      "hosting": {
-        "amplifyhosting": {
-          "appId": "d2tjo9i2r3nhc2",
-          "type": "manual"
-        }
       }
     }
   }

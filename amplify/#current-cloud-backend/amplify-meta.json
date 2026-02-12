@@ -29,7 +29,7 @@
           ]
         }
       ],
-      "lastPushTimeStamp": "2026-02-11T13:48:01.704Z",
+      "lastPushTimeStamp": "2026-02-12T03:57:34.443Z",
       "providerMetadata": {
         "s3TemplateURL": "https://s3.amazonaws.com/amplify-taxmvp-dev-91f6c-deployment/amplify-cfn-templates/auth/userPoolGroups-cloudformation-template.json",
         "logicalId": "authuserPoolGroups"
@@ -79,7 +79,7 @@
         "s3TemplateURL": "https://s3.amazonaws.com/amplify-taxmvp-dev-91f6c-deployment/amplify-cfn-templates/auth/taxmvpd8e247c7d8e247c7-cloudformation-template.json",
         "logicalId": "authtaxmvpd8e247c7d8e247c7"
       },
-      "lastPushTimeStamp": "2026-02-11T13:48:01.706Z",
+      "lastPushTimeStamp": "2026-02-12T03:57:34.445Z",
       "output": {
         "UserPoolId": "us-east-1_6PgEd5O1w",
         "AppClientIDWeb": "72pr0n98n4rf6cd27nvj2pv2cs",
@@ -122,8 +122,8 @@
         "s3TemplateURL": "https://s3.amazonaws.com/amplify-taxmvp-dev-91f6c-deployment/amplify-cfn-templates/api/cloudformation-template.json",
         "logicalId": "apitaxmvp"
       },
-      "lastPushTimeStamp": "2026-02-11T13:48:01.706Z",
-      "lastPushDirHash": "7f5kW3flkRwLpJ92QSg7aYsUBPU="
+      "lastPushTimeStamp": "2026-02-12T03:57:34.451Z",
+      "lastPushDirHash": "kYtl65IAs0q9Obc/Ba/v2yQKunc="
     }
   },
   "storage": {
@@ -153,7 +153,7 @@
           ]
         }
       ],
-      "lastPushTimeStamp": "2026-02-11T13:48:01.707Z",
+      "lastPushTimeStamp": "2026-02-12T03:57:34.454Z",
       "providerMetadata": {
         "s3TemplateURL": "https://s3.amazonaws.com/amplify-taxmvp-dev-91f6c-deployment/amplify-cfn-templates/storage/cloudformation-template.json",
         "logicalId": "storagefiskaldocuments"
@@ -182,7 +182,7 @@
         "s3TemplateURL": "https://s3.amazonaws.com/amplify-taxmvp-dev-91f6c-deployment/amplify-cfn-templates/function/taxmvpfe99dd4fPostConfirmation-cloudformation-template.json",
         "logicalId": "functiontaxmvpfe99dd4fPostConfirmation"
       },
-      "lastPushTimeStamp": "2026-02-11T13:48:01.708Z",
+      "lastPushTimeStamp": "2026-02-12T03:57:34.455Z",
       "output": {
         "LambdaExecutionRoleArn": "arn:aws:iam::981914209110:role/taxmvpfe99dd4fPostConfirmation-dev",
         "Region": "us-east-1",
@@ -208,7 +208,7 @@
         "s3TemplateURL": "https://s3.amazonaws.com/amplify-taxmvp-dev-91f6c-deployment/amplify-cfn-templates/function/taxmvpd8e247c7d8e247c7PostConfirmation-cloudformation-template.json",
         "logicalId": "functiontaxmvpd8e247c7d8e247c7PostConfirmation"
       },
-      "lastPushTimeStamp": "2026-02-11T13:48:01.709Z",
+      "lastPushTimeStamp": "2026-02-12T03:57:34.457Z",
       "output": {
         "LambdaExecutionRoleArn": "arn:aws:iam::981914209110:role/taxmvpd8e247c7d8e247c7PostConfirmation-dev",
         "Region": "us-east-1",
@@ -219,18 +219,5 @@
       "lastPushDirHash": "DFd4Qk5nfAsXHLD/y3MBe/+srPM="
     }
   },
-  "hosting": {
-    "amplifyhosting": {
-      "service": "amplifyhosting",
-      "providerPlugin": "awscloudformation",
-      "type": "manual",
-      "providerMetadata": {
-        "s3TemplateURL": "https://s3.amazonaws.com/amplify-taxmvp-dev-91f6c-deployment/amplify-cfn-templates/hosting/amplifyhosting-template.json",
-        "logicalId": "hostingamplifyhosting"
-      },
-      "lastPushTimeStamp": "2026-02-11T13:48:02.806Z",
-      "output": {},
-      "lastPushDirHash": "bYAHTVjxYuoVhWoUqKI9dk+I/VQ="
-    }
-  }
+  "hosting": {}
 }

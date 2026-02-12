@@ -364,6 +364,48 @@ export const listPayments = /* GraphQL */ `query ListPayments(
   APITypes.ListPaymentsQueryVariables,
   APITypes.ListPaymentsQuery
 >;
+export const getMessage = /* GraphQL */ `query GetMessage($id: ID!) {
+  getMessage(id: $id) {
+    id
+    caseId
+    clientOwner
+    proOwner
+    senderRole
+    body
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.GetMessageQueryVariables,
+  APITypes.GetMessageQuery
+>;
+export const listMessages = /* GraphQL */ `query ListMessages(
+  $filter: ModelMessageFilterInput
+  $limit: Int
+  $nextToken: String
+) {
+  listMessages(filter: $filter, limit: $limit, nextToken: $nextToken) {
+    items {
+      id
+      caseId
+      clientOwner
+      proOwner
+      senderRole
+      body
+      createdAt
+      updatedAt
+      __typename
+    }
+    nextToken
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.ListMessagesQueryVariables,
+  APITypes.ListMessagesQuery
+>;
 export const getProfessionalAgenda = /* GraphQL */ `query GetProfessionalAgenda($id: ID!) {
   getProfessionalAgenda(id: $id) {
     id
@@ -456,6 +498,41 @@ export const caseDocumentsByCase = /* GraphQL */ `query CaseDocumentsByCase(
 ` as GeneratedQuery<
   APITypes.CaseDocumentsByCaseQueryVariables,
   APITypes.CaseDocumentsByCaseQuery
+>;
+export const messagesByCase = /* GraphQL */ `query MessagesByCase(
+  $caseId: ID!
+  $createdAt: ModelStringKeyConditionInput
+  $sortDirection: ModelSortDirection
+  $filter: ModelMessageFilterInput
+  $limit: Int
+  $nextToken: String
+) {
+  messagesByCase(
+    caseId: $caseId
+    createdAt: $createdAt
+    sortDirection: $sortDirection
+    filter: $filter
+    limit: $limit
+    nextToken: $nextToken
+  ) {
+    items {
+      id
+      caseId
+      clientOwner
+      proOwner
+      senderRole
+      body
+      createdAt
+      updatedAt
+      __typename
+    }
+    nextToken
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.MessagesByCaseQueryVariables,
+  APITypes.MessagesByCaseQuery
 >;
 export const professionalAgendasByProfessionalId = /* GraphQL */ `query ProfessionalAgendasByProfessionalId(
   $professionalId: ID!
