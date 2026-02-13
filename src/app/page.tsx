@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { getCurrentUser, fetchUserAttributes, signIn } from 'aws-amplify/auth';
+import { getCurrentUser, fetchUserAttributes, signIn, signOut } from 'aws-amplify/auth';
 import { useRouter } from 'next/navigation';
 import { createProfessionalProfile, createUserProfile, getProfessionalProfileByOwner, getUserProfileByOwner } from '../lib/graphqlClient';
 import { ProType, UserRole } from '../API';
@@ -85,7 +85,12 @@ export default function HomePage() {
       else {
         router.push('/dashboard-client');
       }
-    } catch {
+    } catch (err: any) {
+      const msg = err?.message || err?.toString?.() || 'Error desconocido en sesión.';
+      console.warn('checkAuthState failed:', err);
+      if (!msg.includes('User needs to be authenticated to call this API.')) {
+        setError(msg);
+      }
       setLoading(false);
     }
   }
@@ -95,8 +100,19 @@ export default function HomePage() {
     setError('');
     setAuthLoading(true);
     try {
-      await signIn({ username: email.trim(), password });
-      await checkAuthState();
+      // Clear any stale session that triggers "already a signed in user"
+      try {
+        await signOut();
+      } catch {
+        // ignore if there is no active session
+      }
+      const signInResult = await signIn({ username: email.trim(), password });
+      if (signInResult?.isSignedIn) {
+        await checkAuthState();
+      } else {
+        const step = signInResult?.nextStep?.signInStep;
+        setError(step ? `Se requiere paso adicional: ${step}` : 'No se pudo completar el inicio de sesión.');
+      }
     } catch (err: any) {
       setError(err?.message || 'No se pudo iniciar sesión.');
     } finally {
