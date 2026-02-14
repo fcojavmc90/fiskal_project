@@ -44,15 +44,22 @@ export default function Navbar() {
   }, [pathname]);
 
   const handleLogout = async () => {
-    if (isAuthBypassed()) {
-      router.push("/");
-      return;
+    try {
+      if (!isAuthBypassed()) {
+        await signOut();
+      } else if (typeof window !== "undefined") {
+        localStorage.removeItem("fk_auth_bypass");
+      }
+    } catch (error) {
+      console.error("Logout failed", error);
+    } finally {
+      document.cookie = "fk_role=; Max-Age=0; path=/";
+      document.cookie = "fk_has_survey=; Max-Age=0; path=/";
+      document.cookie = "fk_paid_initial=; Max-Age=0; path=/";
+      setUser(null);
+      router.replace("/");
+      router.refresh();
     }
-    await signOut();
-    document.cookie = "fk_role=; Max-Age=0; path=/";
-    document.cookie = "fk_has_survey=; Max-Age=0; path=/";
-    document.cookie = "fk_paid_initial=; Max-Age=0; path=/";
-    router.push("/");
   };
 
   const dashboardHref = user?.role === "PRO" ? "/expert-dashboard" : "/dashboard-client";
