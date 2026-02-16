@@ -9,7 +9,7 @@ import {
   MeetingSessionConfiguration,
   MeetingSessionStatusCode,
 } from "amazon-chime-sdk-js";
-import { getAppointmentById } from "../lib/graphqlClient";
+import { getAppointmentById, updateAppointment } from "../lib/graphqlClient";
 import { ensureAmplifyConfigured } from "../lib/amplifyClient";
 
 type ChimeCallProps = {
@@ -40,6 +40,7 @@ export default function ChimeCall({ appointmentId, role, token, embedded, fullHe
   const dragOffsetRef = useRef({ x: 0, y: 0 });
   const [localPos, setLocalPos] = useState({ x: 16, y: 16 });
   const startedRef = useRef(false);
+  const recreateAttemptRef = useRef(false);
 
   const logDebug = (msg: string) => {
     setDebugLines(prev => {
@@ -91,17 +92,18 @@ export default function ChimeCall({ appointmentId, role, token, embedded, fullHe
           return;
         }
 
-        const meetingResponse = { Meeting: meetingData };
-        const attendeeResponse = { Attendee: { AttendeeId: attendeeId, JoinToken: joinToken } };
+        const initSession = async (nextMeetingData: any, nextAttendeeId: string, nextJoinToken: string) => {
+          const meetingResponse = { Meeting: nextMeetingData };
+          const attendeeResponse = { Attendee: { AttendeeId: nextAttendeeId, JoinToken: nextJoinToken } };
 
-        const logger = new ConsoleLogger("fiskal-chime", LogLevel.INFO);
-        const deviceController = new DefaultDeviceController(logger);
-        const configuration = new MeetingSessionConfiguration(meetingResponse, attendeeResponse);
-        const meetingSession = new DefaultMeetingSession(configuration, logger, deviceController);
-        meetingSessionRef.current = meetingSession;
+          const logger = new ConsoleLogger("fiskal-chime", LogLevel.INFO);
+          const deviceController = new DefaultDeviceController(logger);
+          const configuration = new MeetingSessionConfiguration(meetingResponse, attendeeResponse);
+          const meetingSession = new DefaultMeetingSession(configuration, logger, deviceController);
+          meetingSessionRef.current = meetingSession;
 
-        const audioVideo = meetingSession.audioVideo;
-        audioVideo.addObserver({
+          const audioVideo = meetingSession.audioVideo;
+          audioVideo.addObserver({
           audioVideoDidStartConnecting: (reconnecting) => {
             logDebug(`Conectando a media...${reconnecting ? " (reconectando)" : ""}`);
           },
@@ -109,7 +111,47 @@ export default function ChimeCall({ appointmentId, role, token, embedded, fullHe
             logDebug("Audio/Video iniciado");
           },
           audioVideoDidStop: (sessionStatus) => {
-            logDebug(`Audio/Video detenido (code ${statusCodeToString(sessionStatus)})`);
+            const codeName = statusCodeToString(sessionStatus);
+            logDebug(`Audio/Video detenido (code ${codeName})`);
+            if (codeName.startsWith("MeetingEnded") && !recreateAttemptRef.current) {
+              recreateAttemptRef.current = true;
+              setStatus("Recreando reunión...");
+              logDebug("Reunión expirada, recreando...");
+              void (async () => {
+                try {
+                  meetingSession.audioVideo.stop();
+                  const res = await fetch("/api/chime/meeting", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      appointmentId: appointment.id,
+                      clientOwner: appointment.clientOwner,
+                      proOwner: appointment.proOwner,
+                    }),
+                  });
+                  const data = await res.json();
+                  if (!res.ok) throw new Error(data.error || "Error recreando reunión");
+                  await updateAppointment({
+                    id: appointment.id,
+                    meetingId: data.meetingId,
+                    meetingRegion: data.meetingRegion,
+                    meetingData: data.meetingData ? JSON.stringify(data.meetingData) : null,
+                    clientAttendeeId: data.clientAttendeeId,
+                    proAttendeeId: data.proAttendeeId,
+                    clientJoinToken: data.clientJoinToken,
+                    proJoinToken: data.proJoinToken,
+                  } as any);
+                  const nextAttendeeId = role === "pro" ? data.proAttendeeId : data.clientAttendeeId;
+                  const nextJoinToken = role === "pro" ? data.proJoinToken : data.clientJoinToken;
+                  logDebug("Reunión recreada, reconectando...");
+                  await initSession(data.meetingData, nextAttendeeId, nextJoinToken);
+                  if (mounted) setStatus("Conectado");
+                } catch (reErr: any) {
+                  setError(reErr?.message || "No se pudo recrear la reunión.");
+                  logDebug(`Error recreando: ${reErr?.message || "desconocido"}`);
+                }
+              })();
+            }
           },
           videoTileDidUpdate: (tileState) => {
             if (!tileState.tileId || tileState.isContent) return;
@@ -132,45 +174,48 @@ export default function ChimeCall({ appointmentId, role, token, embedded, fullHe
             if (remoteTileIdRef.current === tileId) remoteTileIdRef.current = null;
             logDebug(`Tile removida: ${tileId}`);
           },
-        });
+          });
 
-        if (audioRef.current) {
-          audioVideo.bindAudioElement(audioRef.current);
-        }
-
-        if (navigator?.mediaDevices?.getUserMedia) {
-          try {
-            await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-            logDebug("Permisos de cámara/micrófono OK");
-          } catch (permErr: any) {
-            const msg = permErr?.message || permErr?.name || "permiso denegado";
-            logDebug(`Permisos cámara/micrófono: ${msg}`);
+          if (audioRef.current) {
+            audioVideo.bindAudioElement(audioRef.current);
           }
-        } else {
-          logDebug("mediaDevices no disponible (contexto inseguro?)");
-        }
 
-        const audioInputs = await audioVideo.listAudioInputDevices();
-        logDebug(`Audio inputs: ${audioInputs.length}`);
-        if (audioInputs[0]) {
-          await audioVideo.startAudioInput(audioInputs[0].deviceId);
-        }
-        const videoInputs = await audioVideo.listVideoInputDevices();
-        logDebug(`Video inputs: ${videoInputs.length}`);
-        if (videoInputs[0]) {
-          videoDeviceIdRef.current = videoInputs[0].deviceId;
-          try {
-            await audioVideo.startVideoInput(videoInputs[0].deviceId);
-          } catch (err: any) {
-            logDebug(`Error iniciando cámara: ${err?.message || "desconocido"}`);
+          if (navigator?.mediaDevices?.getUserMedia) {
+            try {
+              await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+              logDebug("Permisos de cámara/micrófono OK");
+            } catch (permErr: any) {
+              const msg = permErr?.message || permErr?.name || "permiso denegado";
+              logDebug(`Permisos cámara/micrófono: ${msg}`);
+            }
+          } else {
+            logDebug("mediaDevices no disponible (contexto inseguro?)");
+          }
+
+          const audioInputs = await audioVideo.listAudioInputDevices();
+          logDebug(`Audio inputs: ${audioInputs.length}`);
+          if (audioInputs[0]) {
+            await audioVideo.startAudioInput(audioInputs[0].deviceId);
+          }
+          const videoInputs = await audioVideo.listVideoInputDevices();
+          logDebug(`Video inputs: ${videoInputs.length}`);
+          if (videoInputs[0]) {
+            videoDeviceIdRef.current = videoInputs[0].deviceId;
+            try {
+              await audioVideo.startVideoInput(videoInputs[0].deviceId);
+            } catch (err: any) {
+              logDebug(`Error iniciando cámara: ${err?.message || "desconocido"}`);
+              setIsCameraOn(false);
+            }
+          } else {
             setIsCameraOn(false);
           }
-        } else {
-          setIsCameraOn(false);
-        }
 
-        audioVideo.start();
-        audioVideo.startLocalVideoTile();
+          audioVideo.start();
+          audioVideo.startLocalVideoTile();
+        };
+
+        await initSession(meetingData, attendeeId, joinToken);
         if (mounted) setStatus("Conectado");
       } catch (err: any) {
         setError(err?.message || "No se pudo iniciar la llamada.");
