@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { ChimeSDKMeetingsClient, CreateAttendeeCommand, CreateMeetingCommand } from "@aws-sdk/client-chime-sdk-meetings";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 const REGION = process.env.CHIME_AWS_REGION || process.env.AWS_REGION || "us-east-1";
 const ACCESS_KEY_ID = process.env.CHIME_AWS_ACCESS_KEY_ID || "";
 const SECRET_ACCESS_KEY = process.env.CHIME_AWS_SECRET_ACCESS_KEY || "";
