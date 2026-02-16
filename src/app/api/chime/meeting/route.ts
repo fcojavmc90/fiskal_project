@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { ChimeSDKMeetingsClient, CreateAttendeeCommand, CreateMeetingCommand } from "@aws-sdk/client-chime-sdk-meetings";
 
-const REGION = process.env.AWS_REGION || "us-east-1";
+const REGION = process.env.CHIME_AWS_REGION || process.env.AWS_REGION || "us-east-1";
+const ACCESS_KEY_ID = process.env.CHIME_AWS_ACCESS_KEY_ID || "";
+const SECRET_ACCESS_KEY = process.env.CHIME_AWS_SECRET_ACCESS_KEY || "";
 
 function shortId(id: string, max: number) {
   if (!id) return id;
@@ -15,7 +17,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing appointment data" }, { status: 400 });
     }
 
-    const client = new ChimeSDKMeetingsClient({ region: REGION });
+    if (!ACCESS_KEY_ID || !SECRET_ACCESS_KEY) {
+      return NextResponse.json({ error: "Missing Chime credentials" }, { status: 500 });
+    }
+
+    const client = new ChimeSDKMeetingsClient({
+      region: REGION,
+      credentials: {
+        accessKeyId: ACCESS_KEY_ID,
+        secretAccessKey: SECRET_ACCESS_KEY,
+      },
+    });
 
     const meetingRes = await client.send(
       new CreateMeetingCommand({
