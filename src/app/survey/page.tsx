@@ -20,9 +20,9 @@ export default function SurveyPage() {
   const questions = useMemo(() => ([
     { id: 'q1', label: '¿Cuál es el número de la carta o aviso? (Ej: CP2000, CP14, Letter 3219, LTR 504)', type: 'text' },
     { id: 'q2', label: '¿Qué agencia envía la notificación?', type: 'select', options: ['IRS', 'Estado (especificar)', 'No estoy seguro'] },
-    { id: 'q3', label: '¿Cuál es la Fecha del Aviso?', type: 'text' },
-    { id: 'q4', label: '¿Cuál es la Fecha Límite de Respuesta?', type: 'text' },
-    { id: 'q5', label: '¿A qué año fiscal (Tax Year) se refiere la notificación?', type: 'text' },
+    { id: 'q3', label: '¿Cuál es la Fecha del Aviso?', type: 'date' },
+    { id: 'q4', label: '¿Cuál es la Fecha Límite de Respuesta?', type: 'date' },
+    { id: 'q5', label: '¿A qué año fiscal (Tax Year) se refiere la notificación?', type: 'number' },
     { id: 'q6', label: '¿El aviso indica una deficiencia, error de cálculo o solicitud de información?', type: 'select', options: ['Deficiencia (impuestos no pagados)', 'Error de cálculo', 'Solicitud de información', 'No estoy seguro'] },
     { id: 'q7', label: '¿El monto total reclamado coincide con sus registros?', type: 'select', options: ['Coincide', 'No coincide', 'No estoy seguro'] },
     { id: 'q8', label: '¿La carta menciona ingresos no reportados por terceros (W-2, 1099)?', type: 'select', options: ['Sí', 'No', 'No estoy seguro'] },
@@ -162,6 +162,25 @@ export default function SurveyPage() {
                 style={inputStyle}
                 value={answers[currentQuestion.id] ?? ''}
                 onChange={e => setAnswers({ ...answers, [currentQuestion.id]: e.target.value })}
+              />
+            )}
+            {currentQuestion.type === 'date' && (
+              <input
+                type="date"
+                style={inputStyle}
+                value={answers[currentQuestion.id] ?? ''}
+                onChange={e => setAnswers({ ...answers, [currentQuestion.id]: e.target.value })}
+              />
+            )}
+            {currentQuestion.type === 'number' && (
+              <input
+                type="number"
+                inputMode="numeric"
+                step={1}
+                placeholder="Ej: 2023"
+                style={inputStyle}
+                value={answers[currentQuestion.id] ?? ''}
+                onChange={e => setAnswers({ ...answers, [currentQuestion.id]: e.target.value.replace(/[^0-9]/g, '') })}
               />
             )}
             {currentQuestion.type === 'select' && (
