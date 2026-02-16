@@ -24,6 +24,7 @@ export default function ChimeCall({ appointmentId, role, token, embedded, fullHe
   ensureAmplifyConfigured();
   const [error, setError] = useState("");
   const [status, setStatus] = useState("Conectando...");
+  const [debugLines, setDebugLines] = useState<string[]>([]);
   const [isMuted, setIsMuted] = useState(false);
   const [isCameraOn, setIsCameraOn] = useState(true);
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -37,11 +38,33 @@ export default function ChimeCall({ appointmentId, role, token, embedded, fullHe
   const draggingRef = useRef(false);
   const dragOffsetRef = useRef({ x: 0, y: 0 });
   const [localPos, setLocalPos] = useState({ x: 16, y: 16 });
+  const startedRef = useRef(false);
+
+  const logDebug = (msg: string) => {
+    setDebugLines(prev => {
+      const next = [...prev, `[${new Date().toLocaleTimeString()}] ${msg}`];
+      return next.slice(-25);
+    });
+  };
+
+  const statusCodeToString = (sessionStatus: any) => {
+    try {
+      if (sessionStatus?.statusCode) {
+        return typeof sessionStatus.statusCode === "function"
+          ? String(sessionStatus.statusCode())
+          : String(sessionStatus.statusCode);
+      }
+    } catch {}
+    return "unknown";
+  };
 
   useEffect(() => {
     let mounted = true;
     const start = async () => {
       try {
+        if (startedRef.current) return;
+        startedRef.current = true;
+        logDebug("Iniciando sesión de Chime");
         if (!appointmentId) {
           setError("Falta el ID de la cita.");
           return;
@@ -76,15 +99,26 @@ export default function ChimeCall({ appointmentId, role, token, embedded, fullHe
 
         const audioVideo = meetingSession.audioVideo;
         audioVideo.addObserver({
+          audioVideoDidStartConnecting: (reconnecting) => {
+            logDebug(`Conectando a media...${reconnecting ? " (reconectando)" : ""}`);
+          },
+          audioVideoDidStart: () => {
+            logDebug("Audio/Video iniciado");
+          },
+          audioVideoDidStop: (sessionStatus) => {
+            logDebug(`Audio/Video detenido (code ${statusCodeToString(sessionStatus)})`);
+          },
           videoTileDidUpdate: (tileState) => {
             if (!tileState.tileId || tileState.isContent) return;
             if (tileState.localTile) {
               localTileIdRef.current = tileState.tileId;
+              logDebug(`Local tile: ${tileState.tileId} (paused=${tileState.paused})`);
               if (localVideoRef.current) {
                 audioVideo.bindVideoElement(tileState.tileId, localVideoRef.current);
               }
             } else {
               remoteTileIdRef.current = tileState.tileId;
+              logDebug(`Remote tile: ${tileState.tileId} (paused=${tileState.paused})`);
               if (remoteVideoRef.current) {
                 audioVideo.bindVideoElement(tileState.tileId, remoteVideoRef.current);
               }
@@ -93,6 +127,7 @@ export default function ChimeCall({ appointmentId, role, token, embedded, fullHe
           videoTileWasRemoved: (tileId) => {
             if (localTileIdRef.current === tileId) localTileIdRef.current = null;
             if (remoteTileIdRef.current === tileId) remoteTileIdRef.current = null;
+            logDebug(`Tile removida: ${tileId}`);
           },
         });
 
@@ -100,14 +135,33 @@ export default function ChimeCall({ appointmentId, role, token, embedded, fullHe
           audioVideo.bindAudioElement(audioRef.current);
         }
 
+        if (navigator?.mediaDevices?.getUserMedia) {
+          try {
+            await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+            logDebug("Permisos de cámara/micrófono OK");
+          } catch (permErr: any) {
+            const msg = permErr?.message || permErr?.name || "permiso denegado";
+            logDebug(`Permisos cámara/micrófono: ${msg}`);
+          }
+        } else {
+          logDebug("mediaDevices no disponible (contexto inseguro?)");
+        }
+
         const audioInputs = await audioVideo.listAudioInputDevices();
+        logDebug(`Audio inputs: ${audioInputs.length}`);
         if (audioInputs[0]) {
           await audioVideo.startAudioInput(audioInputs[0].deviceId);
         }
         const videoInputs = await audioVideo.listVideoInputDevices();
+        logDebug(`Video inputs: ${videoInputs.length}`);
         if (videoInputs[0]) {
           videoDeviceIdRef.current = videoInputs[0].deviceId;
-          await audioVideo.startVideoInput(videoInputs[0].deviceId);
+          try {
+            await audioVideo.startVideoInput(videoInputs[0].deviceId);
+          } catch (err: any) {
+            logDebug(`Error iniciando cámara: ${err?.message || "desconocido"}`);
+            setIsCameraOn(false);
+          }
         } else {
           setIsCameraOn(false);
         }
@@ -117,6 +171,7 @@ export default function ChimeCall({ appointmentId, role, token, embedded, fullHe
         if (mounted) setStatus("Conectado");
       } catch (err: any) {
         setError(err?.message || "No se pudo iniciar la llamada.");
+        logDebug(`Error general: ${err?.message || "desconocido"}`);
       }
     };
     start();
@@ -207,6 +262,13 @@ export default function ChimeCall({ appointmentId, role, token, embedded, fullHe
       {!embedded && <h1 style={{ color: "#00e5ff" }}>Videollamada</h1>}
       {error && <p style={{ color: "#ffb4b4" }}>{error}</p>}
       {!error && <p style={{ color: "#9adfff" }}>{status}</p>}
+      {debugLines.length > 0 && (
+        <div style={{ marginTop: "10px", background: "#001426", border: "1px solid #004b6e", padding: "8px 10px", borderRadius: "8px", fontSize: "12px" }}>
+          {debugLines.map((line, idx) => (
+            <div key={`${line}-${idx}`} style={{ color: "#8fd3ff", whiteSpace: "pre-wrap" }}>{line}</div>
+          ))}
+        </div>
+      )}
 
       <div
         ref={videoWrapRef}
