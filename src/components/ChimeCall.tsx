@@ -7,6 +7,7 @@ import {
   DefaultMeetingSession,
   LogLevel,
   MeetingSessionConfiguration,
+  MeetingSessionStatusCode,
 } from "amazon-chime-sdk-js";
 import { getAppointmentById } from "../lib/graphqlClient";
 import { ensureAmplifyConfigured } from "../lib/amplifyClient";
@@ -50,9 +51,11 @@ export default function ChimeCall({ appointmentId, role, token, embedded, fullHe
   const statusCodeToString = (sessionStatus: any) => {
     try {
       if (sessionStatus?.statusCode) {
-        return typeof sessionStatus.statusCode === "function"
-          ? String(sessionStatus.statusCode())
-          : String(sessionStatus.statusCode);
+        const code = typeof sessionStatus.statusCode === "function"
+          ? sessionStatus.statusCode()
+          : sessionStatus.statusCode;
+        const name = (MeetingSessionStatusCode as any)[code];
+        return name ? `${name} (${code})` : String(code);
       }
     } catch {}
     return "unknown";
