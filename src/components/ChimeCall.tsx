@@ -130,7 +130,12 @@ export default function ChimeCall({ appointmentId, role, token, embedded, fullHe
                     }),
                   });
                   const data = await res.json();
-                  if (!res.ok) throw new Error(data.error || "Error recreando reunión");
+                  if (!res.ok) {
+                    if (data?.error === "Missing Chime credentials") {
+                      logDebug(`Credenciales: accessKey=${data?.hasAccessKey} secretKey=${data?.hasSecretKey} region=${data?.hasRegion}`);
+                    }
+                    throw new Error(data.error || "Error recreando reunión");
+                  }
                   await updateAppointment({
                     id: appointment.id,
                     meetingId: data.meetingId,
