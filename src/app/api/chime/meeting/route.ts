@@ -18,7 +18,15 @@ export async function POST(req: Request) {
     }
 
     if (!ACCESS_KEY_ID || !SECRET_ACCESS_KEY) {
-      return NextResponse.json({ error: "Missing Chime credentials" }, { status: 500 });
+      return NextResponse.json(
+        {
+          error: "Missing Chime credentials",
+          hasAccessKey: Boolean(ACCESS_KEY_ID),
+          hasSecretKey: Boolean(SECRET_ACCESS_KEY),
+          hasRegion: Boolean(REGION),
+        },
+        { status: 500 }
+      );
     }
 
     const client = new ChimeSDKMeetingsClient({
