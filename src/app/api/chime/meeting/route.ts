@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 const REGION = process.env.CHIME_AWS_REGION || process.env.AWS_REGION || "us-east-1";
 const ACCESS_KEY_ID = process.env.CHIME_AWS_ACCESS_KEY_ID || "";
 const SECRET_ACCESS_KEY = process.env.CHIME_AWS_SECRET_ACCESS_KEY || "";
+const CHIME_LAMBDA_URL = process.env.CHIME_LAMBDA_URL || "";
 
 function shortId(id: string, max: number) {
   if (!id) return id;
@@ -18,6 +19,16 @@ export async function POST(req: Request) {
     const { appointmentId, clientOwner, proOwner } = await req.json();
     if (!appointmentId || !clientOwner || !proOwner) {
       return NextResponse.json({ error: "Missing appointment data" }, { status: 400 });
+    }
+
+    if (CHIME_LAMBDA_URL) {
+      const lambdaRes = await fetch(CHIME_LAMBDA_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ appointmentId, clientOwner, proOwner }),
+      });
+      const lambdaJson = await lambdaRes.json().catch(() => ({}));
+      return NextResponse.json(lambdaJson, { status: lambdaRes.status });
     }
 
     if (!ACCESS_KEY_ID || !SECRET_ACCESS_KEY) {
