@@ -7,7 +7,9 @@ export const dynamic = "force-dynamic";
 const REGION = process.env.CHIME_AWS_REGION || process.env.AWS_REGION || "us-east-1";
 const ACCESS_KEY_ID = process.env.CHIME_AWS_ACCESS_KEY_ID || "";
 const SECRET_ACCESS_KEY = process.env.CHIME_AWS_SECRET_ACCESS_KEY || "";
-const CHIME_LAMBDA_URL = process.env.CHIME_LAMBDA_URL || "";
+const CHIME_LAMBDA_URL =
+  process.env.CHIME_LAMBDA_URL ||
+  "https://qxi6j7zrocm4zeu34a3awjjn5q0garmg.lambda-url.us-east-1.on.aws/";
 
 function shortId(id: string, max: number) {
   if (!id) return id;
@@ -38,6 +40,7 @@ export async function POST(req: Request) {
           hasAccessKey: Boolean(ACCESS_KEY_ID),
           hasSecretKey: Boolean(SECRET_ACCESS_KEY),
           hasRegion: Boolean(REGION),
+          hasLambdaUrl: Boolean(CHIME_LAMBDA_URL),
         },
         { status: 500 }
       );
