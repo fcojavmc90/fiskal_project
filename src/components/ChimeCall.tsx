@@ -49,6 +49,11 @@ export default function ChimeCall({ appointmentId, role, token, embedded, fullHe
     });
   };
 
+  const shortId = (value?: string, max = 6) => {
+    if (!value) return "";
+    return value.length <= max ? value : `${value.slice(0, max)}…`;
+  };
+
   const statusCodeToString = (sessionStatus: any) => {
     try {
       if (sessionStatus?.statusCode) {
@@ -68,7 +73,7 @@ export default function ChimeCall({ appointmentId, role, token, embedded, fullHe
       try {
         if (startedRef.current) return;
         startedRef.current = true;
-        logDebug("Iniciando sesión de Chime");
+        logDebug("Iniciando sesión de Chime (build chime-recreate-v2)");
         if (!appointmentId) {
           setError("Falta el ID de la cita.");
           return;
@@ -93,6 +98,7 @@ export default function ChimeCall({ appointmentId, role, token, embedded, fullHe
         }
 
         const initSession = async (nextMeetingData: any, nextAttendeeId: string, nextJoinToken: string) => {
+          logDebug(`MeetingId=${shortId(nextMeetingData?.MeetingId)} AttendeeId=${shortId(nextAttendeeId)}`);
           const meetingResponse = { Meeting: nextMeetingData };
           const attendeeResponse = { Attendee: { AttendeeId: nextAttendeeId, JoinToken: nextJoinToken } };
 
@@ -113,10 +119,13 @@ export default function ChimeCall({ appointmentId, role, token, embedded, fullHe
           audioVideoDidStop: (sessionStatus) => {
             const codeName = statusCodeToString(sessionStatus);
             logDebug(`Audio/Video detenido (code ${codeName})`);
-            if (codeName.startsWith("MeetingEnded") && !recreateAttemptRef.current) {
+            const shouldRecreate =
+              codeName.startsWith("MeetingEnded") ||
+              codeName.startsWith("SignalingBadRequest");
+            if (shouldRecreate && !recreateAttemptRef.current) {
               recreateAttemptRef.current = true;
               setStatus("Recreando reunión...");
-              logDebug("Reunión expirada, recreando...");
+              logDebug("Reunión inválida/expirada, recreando...");
               void (async () => {
                 try {
                   meetingSession.audioVideo.stop();
