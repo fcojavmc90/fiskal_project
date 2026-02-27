@@ -14,7 +14,11 @@ export async function POST(req: Request) {
     const REGION = process.env.CHIME_AWS_REGION || process.env.AWS_REGION || "us-east-1";
     const ACCESS_KEY_ID = process.env.CHIME_AWS_ACCESS_KEY_ID || "";
     const SECRET_ACCESS_KEY = process.env.CHIME_AWS_SECRET_ACCESS_KEY || "";
-    const CHIME_LAMBDA_URL = process.env.CHIME_LAMBDA_URL || "";
+    const DEFAULT_LAMBDA_URL = "https://qxi6j7zrocm4zeu34a3awjjn5q0garmg.lambda-url.us-east-1.on.aws/";
+    const CHIME_LAMBDA_URL =
+      process.env.CHIME_LAMBDA_URL ||
+      process.env.NEXT_PUBLIC_CHIME_LAMBDA_URL ||
+      DEFAULT_LAMBDA_URL;
     const { appointmentId, clientOwner, proOwner } = await req.json();
     if (!appointmentId || !clientOwner || !proOwner) {
       return NextResponse.json({ error: "Missing appointment data" }, { status: 400 });
