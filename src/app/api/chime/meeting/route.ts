@@ -14,6 +14,7 @@ export async function POST(req: Request) {
     const REGION = process.env.CHIME_AWS_REGION || process.env.AWS_REGION || "us-east-1";
     const ACCESS_KEY_ID = process.env.CHIME_AWS_ACCESS_KEY_ID || "";
     const SECRET_ACCESS_KEY = process.env.CHIME_AWS_SECRET_ACCESS_KEY || "";
+    const FORCE_SDK = process.env.CHIME_FORCE_SDK === "true";
     const DEFAULT_LAMBDA_URL = "https://qxi6j7zrocm4zeu34a3awjjn5q0garmg.lambda-url.us-east-1.on.aws/";
     const CHIME_LAMBDA_URL =
       process.env.CHIME_LAMBDA_URL ||
@@ -24,7 +25,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing appointment data" }, { status: 400 });
     }
 
-    if (CHIME_LAMBDA_URL) {
+    if (CHIME_LAMBDA_URL && !FORCE_SDK) {
       const lambdaRes = await fetch(CHIME_LAMBDA_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
