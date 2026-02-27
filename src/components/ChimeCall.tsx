@@ -141,7 +141,9 @@ export default function ChimeCall({ appointmentId, role, token, embedded, fullHe
                   const data = await res.json();
                   if (!res.ok) {
                     if (data?.error === "Missing Chime credentials") {
-                      logDebug(`Credenciales: accessKey=${data?.hasAccessKey} secretKey=${data?.hasSecretKey} region=${data?.hasRegion}`);
+                      logDebug(`Credenciales: accessKey=${data?.hasAccessKey} secretKey=${data?.hasSecretKey} region=${data?.hasRegion} lambdaUrl=${data?.hasLambdaUrl}`);
+                    } else if (data?.usingLambda !== undefined) {
+                      logDebug(`Chime backend: usingLambda=${data?.usingLambda} lambdaUrl=${data?.hasLambdaUrl}`);
                     }
                     throw new Error(data.error || "Error recreando reunión");
                   }

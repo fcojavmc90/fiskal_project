@@ -4,11 +4,6 @@ import { ChimeSDKMeetingsClient, CreateAttendeeCommand, CreateMeetingCommand } f
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const REGION = process.env.CHIME_AWS_REGION || process.env.AWS_REGION || "us-east-1";
-const ACCESS_KEY_ID = process.env.CHIME_AWS_ACCESS_KEY_ID || "";
-const SECRET_ACCESS_KEY = process.env.CHIME_AWS_SECRET_ACCESS_KEY || "";
-const CHIME_LAMBDA_URL = process.env.CHIME_LAMBDA_URL || "";
-
 function shortId(id: string, max: number) {
   if (!id) return id;
   return id.length <= max ? id : id.slice(0, max);
@@ -16,6 +11,10 @@ function shortId(id: string, max: number) {
 
 export async function POST(req: Request) {
   try {
+    const REGION = process.env.CHIME_AWS_REGION || process.env.AWS_REGION || "us-east-1";
+    const ACCESS_KEY_ID = process.env.CHIME_AWS_ACCESS_KEY_ID || "";
+    const SECRET_ACCESS_KEY = process.env.CHIME_AWS_SECRET_ACCESS_KEY || "";
+    const CHIME_LAMBDA_URL = process.env.CHIME_LAMBDA_URL || "";
     const { appointmentId, clientOwner, proOwner } = await req.json();
     if (!appointmentId || !clientOwner || !proOwner) {
       return NextResponse.json({ error: "Missing appointment data" }, { status: 400 });
@@ -28,14 +27,35 @@ export async function POST(req: Request) {
         body: JSON.stringify({ appointmentId, clientOwner, proOwner }),
       });
       const lambdaJson = await lambdaRes.json().catch(() => ({}));
+      if (!lambdaRes.ok) {
+        return NextResponse.json(
+          { error: lambdaJson?.error || "Chime lambda error", usingLambda: true, hasLambdaUrl: true },
+          { status: lambdaRes.status }
+        );
+      }
       return NextResponse.json(lambdaJson, { status: lambdaRes.status });
+    }
+
+    if (!ACCESS_KEY_ID || !SECRET_ACCESS_KEY) {
+      return NextResponse.json(
+        {
+          error: "Missing Chime credentials",
+          usingLambda: false,
+          hasLambdaUrl: Boolean(CHIME_LAMBDA_URL),
+          hasAccessKey: Boolean(ACCESS_KEY_ID),
+          hasSecretKey: Boolean(SECRET_ACCESS_KEY),
+          hasRegion: Boolean(REGION),
+        },
+        { status: 500 }
+      );
     }
 
     const client = new ChimeSDKMeetingsClient({
       region: REGION,
-      credentials: ACCESS_KEY_ID && SECRET_ACCESS_KEY
-        ? { accessKeyId: ACCESS_KEY_ID, secretAccessKey: SECRET_ACCESS_KEY }
-        : undefined,
+      credentials: {
+        accessKeyId: ACCESS_KEY_ID,
+        secretAccessKey: SECRET_ACCESS_KEY,
+      },
     });
 
     const meetingRes = await client.send(
