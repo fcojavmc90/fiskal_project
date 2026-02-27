@@ -12,6 +12,7 @@ type ProCard = {
   bio?: string | null;
   ratingAvg?: number | null;
   ratingCount?: number | null;
+  isActive?: boolean | null;
 };
 
 function maskName(name: string) {
