@@ -32,12 +32,17 @@ export async function POST(req: Request) {
       });
       const lambdaJson = await lambdaRes.json().catch(() => ({}));
       if (!lambdaRes.ok) {
-        return NextResponse.json(
-          { error: lambdaJson?.error || "Chime lambda error", usingLambda: true, hasLambdaUrl: true },
-          { status: lambdaRes.status }
-        );
+        if (!ACCESS_KEY_ID || !SECRET_ACCESS_KEY) {
+          return NextResponse.json(
+            { error: lambdaJson?.error || "Chime lambda error", usingLambda: true, hasLambdaUrl: true },
+            { status: lambdaRes.status }
+          );
+        }
+        // Fall back to SDK if Lambda failed but credentials exist.
       }
-      return NextResponse.json(lambdaJson, { status: lambdaRes.status });
+      if (lambdaRes.ok) {
+        return NextResponse.json(lambdaJson, { status: lambdaRes.status });
+      }
     }
 
     if (!ACCESS_KEY_ID || !SECRET_ACCESS_KEY) {
