@@ -79,7 +79,8 @@ export default function ProfessionalsPage() {
             // Si falla el ranking, mostramos igual el listado base.
           }
         }
-        setPros(scored);
+        const active = scored.filter(p => p.isActive !== false);
+        setPros(active);
       } catch (err: any) {
         alert('Error cargando profesionales: ' + err.message);
       } finally {

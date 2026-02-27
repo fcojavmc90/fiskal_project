@@ -231,7 +231,6 @@ export async function getUserProfileByOwner(owner: string) {
 export async function listProfessionalProfiles() {
   const res = await getClient().graphql({
     query: listProfessionalProfilesQuery,
-    variables: { filter: { isActive: { eq: true } } },
   });
   return res.data?.listProfessionalProfiles?.items ?? [];
 }
