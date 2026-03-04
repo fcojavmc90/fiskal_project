@@ -31,18 +31,31 @@ export async function POST(req: Request) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ appointmentId, clientOwner, proOwner }),
       });
-      const lambdaJson = await lambdaRes.json().catch(() => ({}));
+      const lambdaText = await lambdaRes.text();
+      const lambdaJson = (() => {
+        try {
+          return JSON.parse(lambdaText);
+        } catch {
+          return null;
+        }
+      })();
       if (!lambdaRes.ok) {
         if (!ACCESS_KEY_ID || !SECRET_ACCESS_KEY) {
           return NextResponse.json(
-            { error: lambdaJson?.error || "Chime lambda error", usingLambda: true, hasLambdaUrl: true },
+            {
+              error: lambdaJson?.error || "Chime lambda error",
+              usingLambda: true,
+              hasLambdaUrl: true,
+              lambdaStatus: lambdaRes.status,
+              lambdaBody: lambdaText?.slice(0, 600) || "",
+            },
             { status: lambdaRes.status }
           );
         }
         // Fall back to SDK if Lambda failed but credentials exist.
       }
       if (lambdaRes.ok) {
-        return NextResponse.json(lambdaJson, { status: lambdaRes.status });
+        return NextResponse.json(lambdaJson ?? { ok: true }, { status: lambdaRes.status });
       }
     }
 

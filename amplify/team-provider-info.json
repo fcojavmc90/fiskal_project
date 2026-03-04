@@ -1,39 +1,50 @@
 {
-  "dev": {
+  "master": {
     "awscloudformation": {
-      "AuthRoleName": "amplify-taxmvp-dev-91f6c-authRole",
-      "UnauthRoleArn": "arn:aws:iam::981914209110:role/amplify-taxmvp-dev-91f6c-unauthRole",
-      "AuthRoleArn": "arn:aws:iam::981914209110:role/amplify-taxmvp-dev-91f6c-authRole",
+      "AuthRoleName": "amplify-fiskalproject-master-224fb-authRole",
+      "UnauthRoleArn": "arn:aws:iam::981914209110:role/amplify-fiskalproject-master-224fb-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::981914209110:role/amplify-fiskalproject-master-224fb-authRole",
       "Region": "us-east-1",
-      "DeploymentBucketName": "amplify-taxmvp-dev-91f6c-deployment",
-      "UnauthRoleName": "amplify-taxmvp-dev-91f6c-unauthRole",
-      "StackName": "amplify-taxmvp-dev-91f6c",
-      "StackId": "arn:aws:cloudformation:us-east-1:981914209110:stack/amplify-taxmvp-dev-91f6c/cd096b60-e689-11f0-914c-0affe7517767",
-      "AmplifyAppId": "d2tjo9i2r3nhc2",
-      "AuthTriggerTemplateURL": "https://s3.amazonaws.com/amplify-taxmvp-dev-91f6c-deployment/amplify-cfn-templates/auth/auth-trigger-cloudformation-template.json"
+      "DeploymentBucketName": "amplify-fiskalproject-master-224fb-deployment",
+      "UnauthRoleName": "amplify-fiskalproject-master-224fb-unauthRole",
+      "StackName": "amplify-fiskalproject-master-224fb",
+      "StackId": "arn:aws:cloudformation:us-east-1:981914209110:stack/amplify-fiskalproject-master-224fb/1f248e80-079f-11f1-b1ee-0affe73aa2c5",
+      "AmplifyAppId": "du8dnlaswt97m",
+      "AuthTriggerTemplateURL": "https://s3.amazonaws.com/amplify-fiskalproject-master-224fb-deployment/amplify-cfn-templates/auth/auth-trigger-cloudformation-template.json"
     },
     "categories": {
-      "storage": {
-        "fiskaldocuments": {}
-      },
       "function": {
         "taxmvpfe99dd4fPostConfirmation": {
           "GROUP": "CLIENT",
-          "deploymentBucketName": "amplify-taxmvp-dev-91f6c-deployment",
+          "deploymentBucketName": "amplify-fiskalproject-master-224fb-deployment",
           "s3Key": "amplify-builds/taxmvpfe99dd4fPostConfirmation-73475a67766555327376-build.zip"
         },
         "taxmvpd8e247c7d8e247c7PostConfirmation": {
           "GROUP": "CLIENT",
-          "deploymentBucketName": "amplify-taxmvp-dev-91f6c-deployment",
+          "deploymentBucketName": "amplify-fiskalproject-master-224fb-deployment",
           "s3Key": "amplify-builds/taxmvpd8e247c7d8e247c7PostConfirmation-614d4647664546416973-build.zip"
         }
       },
-      "auth": {
-        "taxmvpd8e247c7d8e247c7": {},
-        "userPoolGroups": {}
-      },
       "api": {
         "taxmvp": {}
+      },
+      "auth": {
+        "taxmvp4cd85f31": {
+          "userPoolId": "us-east-1_yEsaEcYp9",
+          "userPoolName": "User pool - 6we2n",
+          "webClientId": "7gqnjuj6gfm30bcc5jqv66ref",
+          "nativeClientId": "7gqnjuj6gfm30bcc5jqv66ref",
+          "identityPoolId": "us-east-1:9286ec46-f0ed-4ddc-a3d2-94c6a7973825",
+          "identityPoolName": "taxmvpd8e247c7_identitypool_d8e247c7__master",
+          "allowUnauthenticatedIdentities": false,
+          "authRoleArn": "arn:aws:iam::981914209110:role/amplify-fiskalproject-master-224fb-authRole",
+          "authRoleName": "amplify-fiskalproject-master-224fb-authRole",
+          "unauthRoleArn": "arn:aws:iam::981914209110:role/amplify-fiskalproject-master-224fb-unauthRole",
+          "unauthRoleName": "amplify-fiskalproject-master-224fb-unauthRole"
+        }
+      },
+      "storage": {
+        "fiskaldocuments": {}
       }
     }
   }

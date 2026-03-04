@@ -5,21 +5,6 @@ export type AmplifyDependentResourcesAttributes = {
       "GraphQLAPIIdOutput": "string"
     }
   },
-  "auth": {
-    "taxmvpd8e247c7d8e247c7": {
-      "AppClientID": "string",
-      "AppClientIDWeb": "string",
-      "IdentityPoolId": "string",
-      "IdentityPoolName": "string",
-      "UserPoolArn": "string",
-      "UserPoolId": "string",
-      "UserPoolName": "string"
-    },
-    "userPoolGroups": {
-      "CLIENTGroupRole": "string",
-      "PROGroupRole": "string"
-    }
-  },
   "function": {
     "taxmvpd8e247c7d8e247c7PostConfirmation": {
       "Arn": "string",

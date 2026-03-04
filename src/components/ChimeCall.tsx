@@ -144,6 +144,9 @@ export default function ChimeCall({ appointmentId, role, token, embedded, fullHe
                       logDebug(`Credenciales: accessKey=${data?.hasAccessKey} secretKey=${data?.hasSecretKey} region=${data?.hasRegion} lambdaUrl=${data?.hasLambdaUrl}`);
                     } else if (data?.usingLambda !== undefined) {
                       logDebug(`Chime backend: usingLambda=${data?.usingLambda} lambdaUrl=${data?.hasLambdaUrl}`);
+                      if (data?.lambdaStatus || data?.lambdaBody) {
+                        logDebug(`Lambda status=${data?.lambdaStatus || "?"} body=${String(data?.lambdaBody || "").slice(0, 200)}`);
+                      }
                     }
                     throw new Error(data.error || "Error recreando reunión");
                   }

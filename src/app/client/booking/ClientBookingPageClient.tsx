@@ -25,6 +25,7 @@ export default function ClientBookingPageClient() {
   const [clientName, setClientName] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [blocked, setBlocked] = useState(false);
 
   useEffect(() => {
     const loadAuth = async () => {
@@ -57,6 +58,15 @@ export default function ClientBookingPageClient() {
         setLoading(false);
         return;
       }
+      try {
+        const raw = localStorage.getItem("fiskal_blocked_pros");
+        const list = raw ? JSON.parse(raw) : [];
+        if (Array.isArray(list) && list.includes(proSub)) {
+          setBlocked(true);
+          setLoading(false);
+          return;
+        }
+      } catch {}
       if (isAuthBypassed()) {
         setProProfile({ owner: proSub, displayName: "Profesional" });
         setSlots([]);
@@ -79,6 +89,10 @@ export default function ClientBookingPageClient() {
   }, [proSub]);
 
   const reserve = async (slot: any) => {
+    if (blocked) {
+      alert("No puedes reservar con este profesional porque cancelaste una cita anteriormente.");
+      return;
+    }
     if (isAuthBypassed()) {
       alert("Modo demo: reserva deshabilitada sin login.");
       return;
@@ -163,41 +177,48 @@ export default function ClientBookingPageClient() {
       >
         <h1 style={{ color: "#00e5ff" }}>Agenda de {proProfile?.displayName ?? "Profesional"}</h1>
         {loading && <p>Cargando horarios...</p>}
+        {!loading && blocked && (
+          <p style={{ color: "#ffb4b4" }}>
+            Acceso bloqueado. Cancelaste una reserva con este profesional y no puedes volver a acceder a su calendario.
+          </p>
+        )}
         {!loading && error && <p>{error}</p>}
-        {!loading && !error && slots.length === 0 && <p>No hay horarios disponibles aún.</p>}
-        <div style={{ display: "grid", gap: "12px", marginTop: "20px" }}>
-          {slots.map((slot) => (
-            <div
-              key={slot.id}
-              style={{
-                background: "#001a2c",
-                padding: "14px",
-                borderRadius: "10px",
-                border: "1px solid #00e5ff",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <div>
-                <strong>{slot.date}</strong> - {slot.time} a {slot.endTime || slot.time}
-              </div>
-              <button
-                onClick={() => reserve(slot)}
+        {!loading && !error && !blocked && slots.length === 0 && <p>No hay horarios disponibles aún.</p>}
+        {!loading && !error && !blocked && (
+          <div style={{ display: "grid", gap: "12px", marginTop: "20px" }}>
+            {slots.map((slot) => (
+              <div
+                key={slot.id}
                 style={{
-                  background: "#00ff88",
-                  border: "none",
-                  padding: "8px 12px",
-                  fontWeight: "bold",
-                  cursor: "pointer",
-                  borderRadius: "6px",
+                  background: "#001a2c",
+                  padding: "14px",
+                  borderRadius: "10px",
+                  border: "1px solid #00e5ff",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
                 }}
               >
-                Reservar
-              </button>
-            </div>
-          ))}
-        </div>
+                <div>
+                  <strong>{slot.date}</strong> - {slot.time} a {slot.endTime || slot.time}
+                </div>
+                <button
+                  onClick={() => reserve(slot)}
+                  style={{
+                    background: "#00ff88",
+                    border: "none",
+                    padding: "8px 12px",
+                    fontWeight: "bold",
+                    cursor: "pointer",
+                    borderRadius: "6px",
+                  }}
+                >
+                  Reservar
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

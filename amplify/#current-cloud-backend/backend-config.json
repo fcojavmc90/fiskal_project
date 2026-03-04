@@ -7,7 +7,7 @@
             "UserPoolId"
           ],
           "category": "auth",
-          "resourceName": "taxmvpd8e247c7d8e247c7"
+          "resourceName": "taxmvp4cd85f31"
         }
       ],
       "output": {
@@ -16,7 +16,7 @@
           "defaultAuthentication": {
             "authenticationType": "AMAZON_COGNITO_USER_POOLS",
             "userPoolConfig": {
-              "userPoolId": "authtaxmvpd8e247c7d8e247c7"
+              "userPoolId": "authtaxmvp4cd85f31"
             }
           }
         }
@@ -26,57 +26,12 @@
     }
   },
   "auth": {
-    "taxmvpd8e247c7d8e247c7": {
+    "taxmvp4cd85f31": {
       "customAuth": false,
-      "dependsOn": [
-        {
-          "attributes": [
-            "Arn",
-            "Name"
-          ],
-          "category": "function",
-          "resourceName": "taxmvpd8e247c7d8e247c7PostConfirmation",
-          "triggerProvider": "Cognito"
-        }
-      ],
-      "frontendAuthConfig": {
-        "mfaConfiguration": "OFF",
-        "mfaTypes": [
-          "SMS"
-        ],
-        "passwordProtectionSettings": {
-          "passwordPolicyCharacters": [],
-          "passwordPolicyMinLength": 8
-        },
-        "signupAttributes": [
-          "EMAIL"
-        ],
-        "socialProviders": [],
-        "usernameAttributes": [
-          "EMAIL"
-        ],
-        "verificationMechanisms": [
-          "EMAIL"
-        ]
-      },
+      "dependsOn": [],
       "providerPlugin": "awscloudformation",
-      "service": "Cognito"
-    },
-    "userPoolGroups": {
-      "dependsOn": [
-        {
-          "attributes": [
-            "UserPoolId",
-            "AppClientIDWeb",
-            "AppClientID",
-            "IdentityPoolId"
-          ],
-          "category": "auth",
-          "resourceName": "taxmvpd8e247c7d8e247c7"
-        }
-      ],
-      "providerPlugin": "awscloudformation",
-      "service": "Cognito-UserPool-Groups"
+      "service": "Cognito",
+      "serviceType": "imported"
     }
   },
   "function": {
@@ -93,6 +48,94 @@
   },
   "hosting": {},
   "parameters": {
+    "AMPLIFY_auth_taxmvp4cd85f31_allowUnauthenticatedIdentities": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "taxmvp4cd85f31"
+        }
+      ]
+    },
+    "AMPLIFY_auth_taxmvp4cd85f31_authRoleArn": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "taxmvp4cd85f31"
+        }
+      ]
+    },
+    "AMPLIFY_auth_taxmvp4cd85f31_authRoleName": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "taxmvp4cd85f31"
+        }
+      ]
+    },
+    "AMPLIFY_auth_taxmvp4cd85f31_identityPoolId": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "taxmvp4cd85f31"
+        }
+      ]
+    },
+    "AMPLIFY_auth_taxmvp4cd85f31_identityPoolName": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "taxmvp4cd85f31"
+        }
+      ]
+    },
+    "AMPLIFY_auth_taxmvp4cd85f31_nativeClientId": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "taxmvp4cd85f31"
+        }
+      ]
+    },
+    "AMPLIFY_auth_taxmvp4cd85f31_unauthRoleArn": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "taxmvp4cd85f31"
+        }
+      ]
+    },
+    "AMPLIFY_auth_taxmvp4cd85f31_unauthRoleName": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "taxmvp4cd85f31"
+        }
+      ]
+    },
+    "AMPLIFY_auth_taxmvp4cd85f31_userPoolId": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "taxmvp4cd85f31"
+        }
+      ]
+    },
+    "AMPLIFY_auth_taxmvp4cd85f31_userPoolName": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "taxmvp4cd85f31"
+        }
+      ]
+    },
+    "AMPLIFY_auth_taxmvp4cd85f31_webClientId": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "taxmvp4cd85f31"
+        }
+      ]
+    },
     "AMPLIFY_function_taxmvpd8e247c7d8e247c7PostConfirmation_GROUP": {
       "usedBy": [
         {
@@ -144,29 +187,7 @@
   },
   "storage": {
     "fiskaldocuments": {
-      "dependsOn": [
-        {
-          "attributes": [
-            "UserPoolId"
-          ],
-          "category": "auth",
-          "resourceName": "taxmvpd8e247c7d8e247c7"
-        },
-        {
-          "attributes": [
-            "CLIENTGroupRole"
-          ],
-          "category": "auth",
-          "resourceName": "userPoolGroups"
-        },
-        {
-          "attributes": [
-            "PROGroupRole"
-          ],
-          "category": "auth",
-          "resourceName": "userPoolGroups"
-        }
-      ],
+      "dependsOn": [],
       "providerPlugin": "awscloudformation",
       "service": "S3"
     }

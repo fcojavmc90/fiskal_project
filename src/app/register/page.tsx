@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { fetchUserAttributes, getCurrentUser, signUp } from 'aws-amplify/auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { savePendingProfile, normalizeRole, resolveRole } from '../../lib/profileBootstrap';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -24,8 +25,8 @@ export default function RegisterPage() {
       try {
         const user = await getCurrentUser();
         const attr = await fetchUserAttributes();
-        const roleRaw = attr['custom:role'];
-        const role = roleRaw === 'PRO' ? 'PRO' : 'CLIENT';
+        const owner = attr.sub ?? user.userId ?? '';
+        const role = await resolveRole(owner, attr['custom:role']);
         if (user) {
           router.replace(role === 'PRO' ? '/expert-dashboard' : '/dashboard-client');
         }
@@ -60,22 +61,47 @@ export default function RegisterPage() {
     if (form.password !== form.confirm) return alert("Las contraseñas no coinciden");
 
     try {
-      await signUp({
-        username: form.email,
-        password: form.password,
-        options: {
-          userAttributes: {
-            email: form.email,
-            given_name: form.firstName,
-            family_name: form.lastName,
-            phone_number: form.phone,
-            'custom:role': form.role,
-            'custom:country': form.country,
-            'custom:phone': form.phone,
-            'custom:description': form.description
-          }
-        }
+      savePendingProfile({
+        role: normalizeRole(form.role) ?? "CLIENT",
+        firstName: form.firstName,
+        lastName: form.lastName,
+        email: form.email,
+        description: form.description,
       });
+
+      const fullAttributes = {
+        email: form.email,
+        given_name: form.firstName,
+        family_name: form.lastName,
+        phone_number: form.phone,
+        "custom:role": form.role,
+        "custom:country": form.country,
+        "custom:phone": form.phone,
+        "custom:description": form.description,
+      };
+
+      const minimalAttributes = { email: form.email };
+
+      try {
+        await signUp({
+          username: form.email,
+          password: form.password,
+          options: { userAttributes: fullAttributes },
+        });
+      } catch (err: any) {
+        const msg = (err?.message || "").toLowerCase();
+        const isAttrError =
+          msg.includes("invalidparameter") ||
+          msg.includes("attribute") ||
+          msg.includes("custom:");
+        if (!isAttrError) throw err;
+        await signUp({
+          username: form.email,
+          password: form.password,
+          options: { userAttributes: minimalAttributes },
+        });
+      }
+
       localStorage.setItem('pendingEmail', form.email);
       alert("Registro exitoso. Revisa tu correo para confirmar.");
       router.push(`/confirm-email?email=${encodeURIComponent(form.email)}`);

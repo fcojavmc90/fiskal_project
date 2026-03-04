@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { confirmSignUp, fetchUserAttributes, getCurrentUser } from "aws-amplify/auth";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { resolveRole } from "../../lib/profileBootstrap";
 
 export default function ConfirmEmailPageClient() {
   const router = useRouter();
@@ -23,8 +24,8 @@ export default function ConfirmEmailPageClient() {
       try {
         const user = await getCurrentUser();
         const attr = await fetchUserAttributes();
-        const roleRaw = attr["custom:role"];
-        const role = roleRaw === "PRO" ? "PRO" : "CLIENT";
+        const owner = attr.sub ?? user.userId ?? "";
+        const role = await resolveRole(owner, attr["custom:role"]);
         if (user) {
           router.replace(role === "PRO" ? "/expert-dashboard" : "/dashboard-client");
         }

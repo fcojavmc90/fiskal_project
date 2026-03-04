@@ -60,7 +60,14 @@ export default function ProfessionalsPage() {
             const surveys = await listSurveyResponsesByOwner(owner);
             console.log('[professionals] listSurveyResponsesByOwner result:', surveys);
             const latest = surveys.sort((a: any, b: any) => (a.createdAt || '').localeCompare(b.createdAt || '')).pop();
-            const payload = latest?.answersJson ? JSON.parse(latest.answersJson) : null;
+            let payload: any = null;
+            if (latest?.answersJson) {
+              try {
+                payload = JSON.parse(latest.answersJson);
+              } catch {
+                payload = null;
+              }
+            }
             const answersText = payload ? JSON.stringify(payload.answers ?? payload) : '';
             const scoreFor = (bio?: string | null) => {
               const t = `${answersText}`.toLowerCase();

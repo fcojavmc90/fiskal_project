@@ -5,6 +5,7 @@ import { getCurrentUser, fetchAuthSession, fetchUserAttributes } from 'aws-ampli
 import { uploadData } from '@aws-amplify/storage';
 import { createSurveyResponse } from '../../lib/graphqlClient';
 import { isAuthBypassed } from '../../lib/authBypass';
+import { resolveRole } from '../../lib/profileBootstrap';
 
 type AnswerMap = Record<string, string>;
 
@@ -49,12 +50,13 @@ export default function SurveyPage() {
         }
         const user = await getCurrentUser();
         const attr = await fetchUserAttributes();
-        const role = attr['custom:role'];
+        const owner = attr.sub ?? user.userId ?? '';
+        const role = await resolveRole(owner, attr['custom:role']);
         if (role === 'PRO') {
           router.replace('/expert-dashboard');
           return;
         }
-        setSub(attr.sub ?? user.userId ?? '');
+        setSub(owner);
         const session = await fetchAuthSession();
         setIdentityId(session.identityId ?? '');
       } catch {

@@ -6,6 +6,7 @@ import { getCurrentUser, fetchUserAttributes } from "aws-amplify/auth";
 import { createProfessionalProfile, getProfessionalProfileByOwner } from "../../../lib/graphqlClient";
 import { ProType } from "../../../API";
 import { isAuthBypassed } from "../../../lib/authBypass";
+import { resolveRole } from "../../../lib/profileBootstrap";
 
 export default function ProOnboardingPage() {
   const router = useRouter();
@@ -25,12 +26,12 @@ export default function ProOnboardingPage() {
         }
         const user = await getCurrentUser();
         const attr = await fetchUserAttributes();
-        const role = (attr["custom:role"] || "").toUpperCase();
+        const owner = attr.sub ?? user.userId ?? "";
+        const role = await resolveRole(owner, attr["custom:role"]);
         if (role !== "PRO") {
           router.replace("/dashboard-client");
           return;
         }
-        const owner = attr.sub ?? user.userId ?? "";
         setSub(owner);
         const existing = await getProfessionalProfileByOwner(owner);
         if (existing?.id) {

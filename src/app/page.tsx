@@ -8,6 +8,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { isAuthBypassed } from '../lib/authBypass';
 import { ensureAmplifyConfigured } from '../lib/amplifyClient';
+import { clearPendingProfile, loadPendingProfile, normalizeRole, roleFromUserProfile } from '../lib/profileBootstrap';
 
 export default function HomePage() {
   ensureAmplifyConfigured();
@@ -30,16 +31,20 @@ export default function HomePage() {
     try {
       const user = await getCurrentUser();
       const attr = await fetchUserAttributes();
-      const roleRaw = attr['custom:role'];
-      const role = roleRaw === 'PRO' ? 'PRO' : 'CLIENT';
       const sub = attr.sub ?? user.userId;
-      const firstName = attr.given_name ?? attr['custom:firstName'] ?? '';
-      const lastName = attr.family_name ?? attr['custom:lastName'] ?? '';
-      const email = attr.email ?? '';
+      const pending = loadPendingProfile();
+      const roleFromAttr = normalizeRole(attr['custom:role']);
+      const firstName = attr.given_name ?? attr['custom:firstName'] ?? pending?.firstName ?? '';
+      const lastName = attr.family_name ?? attr['custom:lastName'] ?? pending?.lastName ?? '';
+      const email = attr.email ?? pending?.email ?? '';
+      let resolvedRole: 'PRO' | 'CLIENT' = roleFromAttr ?? pending?.role ?? 'CLIENT';
 
       if (sub) {
         try {
           const existing = await getUserProfileByOwner(sub);
+          const roleFromProfile = roleFromUserProfile(existing);
+          const role = roleFromProfile ?? roleFromAttr ?? pending?.role ?? 'CLIENT';
+          resolvedRole = role;
           if (!existing) {
             await createUserProfile({
               owner: sub,
@@ -49,11 +54,14 @@ export default function HomePage() {
               lastName,
             });
           }
+          if (pending) {
+            clearPendingProfile();
+          }
         } catch (err) {
           console.warn('UserProfile create skipped:', err);
         }
 
-        if (role === 'PRO') {
+        if (resolvedRole === 'PRO') {
           try {
             const displayName = lastName ? `${firstName} ${lastName[0].toUpperCase()}.` : firstName;
             const existingPro = await getProfessionalProfileByOwner(sub);
@@ -62,7 +70,7 @@ export default function HomePage() {
                 owner: sub,
                 proType: ProType.TAX,
                 displayName: displayName || 'Profesional',
-                bio: attr['custom:description'] ?? 'Especialista fiscal.',
+                bio: attr['custom:description'] ?? pending?.description ?? 'Especialista fiscal.',
                 ratingAvg: 0,
                 ratingCount: 0,
                 isActive: true,
@@ -74,14 +82,14 @@ export default function HomePage() {
         }
       }
 
-      const roleCookie = role === 'PRO' ? 'professional' : 'client';
+      const roleCookie = resolvedRole === 'PRO' ? 'professional' : 'client';
       document.cookie = `fk_role=${roleCookie}; path=/`;
       const surveyDone = localStorage.getItem('fiskal_survey_completed') === 'true';
       const paidInitial = localStorage.getItem('fiskal_paid_initial') === 'true';
       document.cookie = `fk_has_survey=${surveyDone ? '1' : '0'}; path=/`;
       document.cookie = `fk_paid_initial=${paidInitial ? '1' : '0'}; path=/`;
 
-      if (role === 'PRO') router.push('/expert-dashboard');
+      if (resolvedRole === 'PRO') router.push('/expert-dashboard');
       else {
         router.push('/dashboard-client');
       }

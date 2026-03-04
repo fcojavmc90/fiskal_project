@@ -31,6 +31,9 @@ export default function ClientDashboard() {
   const [chatOpenByCase, setChatOpenByCase] = useState<Record<string, boolean>>({});
   const [clientDisplayName, setClientDisplayName] = useState('Cliente');
   const [proNamesByOwner, setProNamesByOwner] = useState<Record<string, string>>({});
+  const [showCalendar, setShowCalendar] = useState(true);
+  const [showStatusPanel, setShowStatusPanel] = useState(true);
+  const [showCasesPanel, setShowCasesPanel] = useState(true);
 
   useEffect(() => {
     if (!callModalAppt) return;
@@ -241,6 +244,79 @@ export default function ClientDashboard() {
     return events;
   };
 
+  const clearSurveyCache = () => {
+    try {
+      localStorage.removeItem('fiskal_survey_completed');
+      localStorage.removeItem('fiskal_survey_data');
+      localStorage.removeItem('fiskal_survey_last_id');
+      localStorage.removeItem('fiskal_survey_last_created_at');
+    } catch {}
+    document.cookie = 'fk_has_survey=; Max-Age=0; path=/';
+  };
+
+  const blockProCalendar = (proOwner?: string | null) => {
+    if (!proOwner) return;
+    try {
+      const raw = localStorage.getItem('fiskal_blocked_pros');
+      const list = raw ? JSON.parse(raw) : [];
+      const next = Array.isArray(list) ? list : [];
+      if (!next.includes(proOwner)) next.push(proOwner);
+      localStorage.setItem('fiskal_blocked_pros', JSON.stringify(next));
+    } catch {}
+  };
+
+  const cancelAppointment = async (appt: any) => {
+    const proOwner = appt?.proOwner || '';
+    const ok = confirm('¿Estás seguro de cancelar esta reserva? No podrás volver a acceder al calendario de este profesional.');
+    if (!ok) return;
+    try {
+      await updateAppointment({ id: appt.id, status: AppointmentStatus.CANCELLED });
+      const slotId = (appt.notes || '').split('slotId:')[1]?.trim();
+      if (slotId && proOwner) {
+        const slots = await listAgendaByProfessional(proOwner);
+        const related = slots.find((s: any) => s.id === slotId);
+        if (related) {
+          await updateProfessionalAgenda({
+            id: related.id,
+            status: ProfessionalAgendaStatus.AVAILABLE,
+            clientId: null,
+            meetingLink: null,
+          });
+        }
+      }
+      clearSurveyCache();
+      blockProCalendar(proOwner);
+      setAppointments(prev => prev.filter(a => a.id !== appt.id));
+      alert('Reserva cancelada.');
+    } catch (err: any) {
+      console.error('Error cancelando reserva', err);
+      alert('No se pudo cancelar: ' + (err?.message || 'error'));
+    }
+  };
+
+  const panelBaseStyle: React.CSSProperties = {
+    marginTop: '20px',
+    background: '#003a57',
+    padding: '16px',
+    borderRadius: '10px',
+    border: '1px solid #00e5ff',
+    position: 'relative',
+  };
+
+  const panelCloseStyle: React.CSSProperties = {
+    position: 'absolute',
+    top: '10px',
+    right: '10px',
+    width: '28px',
+    height: '28px',
+    borderRadius: '50%',
+    border: 'none',
+    background: '#ff6b6b',
+    color: '#001a2c',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+  };
+
   const openPaymentLink = async (payment: any) => {
     if (!payment?.id) {
       alert('Pago inválido.');
@@ -282,8 +358,9 @@ export default function ClientDashboard() {
           </button>
         </div>
       )}
-      {!loading && (
-        <div style={{ marginTop: '20px', background: '#003a57', padding: '16px', borderRadius: '10px', border: '1px solid #00e5ff' }}>
+      {!loading && showCalendar && (
+        <div style={panelBaseStyle}>
+          <button onClick={() => setShowCalendar(false)} style={panelCloseStyle}>×</button>
           <h3 style={{ marginTop: 0 }}>Calendario</h3>
           {sortedAppointments.length === 0 && <p>No hay citas en el calendario.</p>}
           {sortedAppointments.length > 0 && (
@@ -294,16 +371,26 @@ export default function ClientDashboard() {
                     <div><strong>{appt.requestedStart}</strong></div>
                     <div style={{ color: '#9adfff' }}>Estado: {appt.status}</div>
                   </div>
-                  {appt.status === AppointmentStatus.ACCEPTED ? (
-                    <button
-                      onClick={() => setCallModalAppt(appt)}
-                      style={{ background: '#00ff88', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold', color: '#001a2c', border: 'none', cursor: 'pointer' }}
-                    >
-                      Entrar a llamada
-                    </button>
-                  ) : (
-                    <span style={{ color: '#7fbfdd' }}>Disponible al aceptar</span>
-                  )}
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    {appt.status === AppointmentStatus.ACCEPTED ? (
+                      <button
+                        onClick={() => setCallModalAppt(appt)}
+                        style={{ background: '#00ff88', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold', color: '#001a2c', border: 'none', cursor: 'pointer' }}
+                      >
+                        Entrar a llamada
+                      </button>
+                    ) : (
+                      <span style={{ color: '#7fbfdd' }}>Disponible al aceptar</span>
+                    )}
+                    {appt.status !== AppointmentStatus.CANCELLED && appt.status !== AppointmentStatus.COMPLETED && (
+                      <button
+                        onClick={() => cancelAppointment(appt)}
+                        style={{ background: '#ff6b6b', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold', color: '#001a2c', border: 'none', cursor: 'pointer' }}
+                      >
+                        Cancelar
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -331,33 +418,50 @@ export default function ClientDashboard() {
         </div>
       )}
       {!loading && appointments.length === 0 && <p>Aún no tienes citas.</p>}
-      <div style={{ display: 'grid', gap: '16px', marginTop: '20px' }}>
-        {appointments.map(appt => (
-          <div key={appt.id} style={{ background: '#003a57', padding: '20px', borderRadius: '12px', border: '1px solid #00e5ff' }}>
-            <p><strong>Estado:</strong> {appt.status}</p>
-            <p><strong>Inicio:</strong> {appt.requestedStart}</p>
-            <p><strong>Profesional:</strong> {appt.professionalId}</p>
-            {appt.status === 'RESCHEDULE_PROPOSED' && (
-              <div style={{ marginTop: '10px' }}>
-                <p>Nuevo horario propuesto: {appt.proposedStart}</p>
-                <button onClick={() => acceptReschedule(appt)} style={{ background: '#00ff88', border: 'none', padding: '6px 10px', fontWeight: 'bold', cursor: 'pointer' }}>Aceptar cambio</button>
+      {!loading && showStatusPanel && (
+        <div style={panelBaseStyle}>
+          <button onClick={() => setShowStatusPanel(false)} style={panelCloseStyle}>×</button>
+          <h3 style={{ marginTop: 0 }}>Estado</h3>
+          <div style={{ display: 'grid', gap: '16px' }}>
+            {appointments.map(appt => (
+              <div key={appt.id} style={{ background: '#003a57', padding: '20px', borderRadius: '12px', border: '1px solid #00e5ff' }}>
+                <p><strong>Estado:</strong> {appt.status}</p>
+                <p><strong>Inicio:</strong> {appt.requestedStart}</p>
+                <p><strong>Profesional:</strong> {appt.professionalId}</p>
+                {appt.status === 'RESCHEDULE_PROPOSED' && (
+                  <div style={{ marginTop: '10px' }}>
+                    <p>Nuevo horario propuesto: {appt.proposedStart}</p>
+                    <button onClick={() => acceptReschedule(appt)} style={{ background: '#00ff88', border: 'none', padding: '6px 10px', fontWeight: 'bold', cursor: 'pointer' }}>Aceptar cambio</button>
+                  </div>
+                )}
+                {appt.status !== AppointmentStatus.CANCELLED && appt.status !== AppointmentStatus.COMPLETED && (
+                  <div style={{ marginTop: '10px' }}>
+                    <button
+                      onClick={() => cancelAppointment(appt)}
+                      style={{ background: '#ff6b6b', border: 'none', padding: '6px 10px', fontWeight: 'bold', cursor: 'pointer', color: '#001a2c' }}
+                    >
+                      Cancelar reserva
+                    </button>
+                  </div>
+                )}
+                {appt.status === 'COMPLETED' && (
+                  <div style={{ marginTop: '10px' }}>
+                    <label>Califica al profesional (1-5)</label>
+                    <select value={rating} onChange={e => setRating(Number(e.target.value))} style={{ marginLeft: '10px' }}>
+                      {[1,2,3,4,5].map(n => <option key={n} value={n}>{n}</option>)}
+                    </select>
+                    <button onClick={() => submitRating(appt.professionalId)} style={{ marginLeft: '10px', background: '#00ff88', border: 'none', padding: '6px 10px', fontWeight: 'bold', cursor: 'pointer' }}>Enviar</button>
+                  </div>
+                )}
               </div>
-            )}
-            {appt.status === 'COMPLETED' && (
-              <div style={{ marginTop: '10px' }}>
-                <label>Califica al profesional (1-5)</label>
-                <select value={rating} onChange={e => setRating(Number(e.target.value))} style={{ marginLeft: '10px' }}>
-                  {[1,2,3,4,5].map(n => <option key={n} value={n}>{n}</option>)}
-                </select>
-                <button onClick={() => submitRating(appt.professionalId)} style={{ marginLeft: '10px', background: '#00ff88', border: 'none', padding: '6px 10px', fontWeight: 'bold', cursor: 'pointer' }}>Enviar</button>
-              </div>
-            )}
+            ))}
           </div>
-        ))}
-      </div>
-      {cases.length > 0 && (
-        <div style={{ marginTop: '30px' }}>
-          <h3>Casos</h3>
+        </div>
+      )}
+      {cases.length > 0 && showCasesPanel && (
+        <div style={{ marginTop: '30px', position: 'relative', background: '#003a57', padding: '16px', borderRadius: '10px', border: '1px solid #00e5ff' }}>
+          <button onClick={() => setShowCasesPanel(false)} style={panelCloseStyle}>×</button>
+          <h3 style={{ marginTop: 0 }}>Casos</h3>
           <div style={{ display: 'grid', gap: '12px' }}>
             {cases.map(c => (
               <div key={c.id} style={{ background: '#003a57', padding: '14px', borderRadius: '10px', border: '1px solid #00e5ff' }}>

@@ -5,6 +5,8 @@ import { fetchUserAttributes, getCurrentUser, signOut } from "aws-amplify/auth";
 import { usePathname, useRouter } from "next/navigation";
 import { isAuthBypassed } from "../lib/authBypass";
 import { ensureAmplifyConfigured } from "../lib/amplifyClient";
+import { getUserProfileByOwner } from "../lib/graphqlClient";
+import { loadPendingProfile, normalizeRole, roleFromUserProfile } from "../lib/profileBootstrap";
 
 type NavUser = {
   name: string;
@@ -27,7 +29,11 @@ export default function Navbar() {
       try {
         const current = await getCurrentUser();
         const attr = await fetchUserAttributes();
-        const roleRaw = attr["custom:role"] === "PRO" ? "PRO" : "CLIENT";
+        const pending = loadPendingProfile();
+        const roleFromAttr = normalizeRole(attr["custom:role"]);
+        const owner = attr.sub ?? current.userId ?? "";
+        const profile = owner ? await getUserProfileByOwner(owner) : null;
+        const roleRaw = roleFromUserProfile(profile) ?? roleFromAttr ?? pending?.role ?? "CLIENT";
         const first = attr.given_name ?? attr["custom:firstName"] ?? "";
         const last = attr.family_name ?? attr["custom:lastName"] ?? "";
         const email = attr.email ?? "";

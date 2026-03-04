@@ -7,7 +7,9 @@ const awsmobile = {
     "aws_cognito_region": "us-east-1",
     "aws_user_pools_id": "us-east-1_yEsaEcYp9",
     "aws_user_pools_web_client_id": "7gqnjuj6gfm30bcc5jqv66ref",
-    "oauth": {},
+    "oauth": {
+        "domain": "us-east-1yesaecyp9.auth.us-east-1.amazoncognito.com"
+    },
     "aws_cognito_username_attributes": [
         "EMAIL"
     ],
@@ -16,12 +18,15 @@ const awsmobile = {
         "EMAIL"
     ],
     "aws_cognito_mfa_configuration": "OFF",
-    "aws_cognito_mfa_types": [
-        "SMS"
-    ],
+    "aws_cognito_mfa_types": [],
     "aws_cognito_password_protection_settings": {
         "passwordPolicyMinLength": 8,
-        "passwordPolicyCharacters": []
+        "passwordPolicyCharacters": [
+            "REQUIRES_LOWERCASE",
+            "REQUIRES_UPPERCASE",
+            "REQUIRES_NUMBERS",
+            "REQUIRES_SYMBOLS"
+        ]
     },
     "aws_cognito_verification_mechanisms": [
         "EMAIL"
@@ -29,7 +34,7 @@ const awsmobile = {
     "aws_appsync_graphqlEndpoint": "https://s6tdvyxcvvb5poyv6s666vzw7u.appsync-api.us-east-1.amazonaws.com/graphql",
     "aws_appsync_region": "us-east-1",
     "aws_appsync_authenticationType": "AMAZON_COGNITO_USER_POOLS",
-    "aws_user_files_s3_bucket": "fiskal-documents-private91f6c-dev",
+    "aws_user_files_s3_bucket": "fiskal-documents-private224fb-master",
     "aws_user_files_s3_bucket_region": "us-east-1"
 };
 

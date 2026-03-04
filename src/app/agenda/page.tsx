@@ -14,6 +14,7 @@ export default function AgendaPage() {
   const [clientEmail, setClientEmail] = useState('');
   const [clientName, setClientName] = useState('');
   const [loading, setLoading] = useState(true);
+  const [blocked, setBlocked] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem('fiskal_selected_pro');
@@ -47,6 +48,15 @@ export default function AgendaPage() {
         setLoading(false);
         return;
       }
+      try {
+        const raw = localStorage.getItem('fiskal_blocked_pros');
+        const list = raw ? JSON.parse(raw) : [];
+        if (Array.isArray(list) && list.includes(pro.owner)) {
+          setBlocked(true);
+          setLoading(false);
+          return;
+        }
+      } catch {}
       if (isAuthBypassed()) {
         setSlots([]);
         setLoading(false);
@@ -67,6 +77,10 @@ export default function AgendaPage() {
   }, [pro]);
 
   const reserve = async (slot: any) => {
+    if (blocked) {
+      alert('No puedes reservar con este profesional porque cancelaste una cita anteriormente.');
+      return;
+    }
     if (isAuthBypassed()) {
       alert('Modo demo: reserva deshabilitada sin login.');
       return;
@@ -159,18 +173,25 @@ export default function AgendaPage() {
       <div style={{ maxWidth: '800px', margin: '0 auto', background: '#003a57', padding: '30px', borderRadius: '15px', border: '1px solid #00e5ff' }}>
         <h1 style={{ color: '#00e5ff' }}>Agenda de {pro?.displayName ?? 'Profesional'}</h1>
         {loading && <p>Cargando horarios...</p>}
+        {!loading && blocked && (
+          <p style={{ color: '#ffb4b4' }}>
+            Acceso bloqueado. Cancelaste una reserva con este profesional y no puedes volver a acceder a su calendario.
+          </p>
+        )}
         {!loading && !pro?.owner && <p>No se encontró profesional seleccionado. Vuelve al listado y selecciona uno.</p>}
-        {!loading && slots.length === 0 && <p>No hay horarios disponibles aún.</p>}
-        <div style={{ display: 'grid', gap: '12px', marginTop: '20px' }}>
-          {slots.map(slot => (
-            <div key={slot.id} style={{ background: '#001a2c', padding: '14px', borderRadius: '10px', border: '1px solid #00e5ff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <strong>{slot.date}</strong> - {slot.time} a {slot.endTime || slot.time}
+        {!loading && !blocked && slots.length === 0 && <p>No hay horarios disponibles aún.</p>}
+        {!loading && !blocked && (
+          <div style={{ display: 'grid', gap: '12px', marginTop: '20px' }}>
+            {slots.map(slot => (
+              <div key={slot.id} style={{ background: '#001a2c', padding: '14px', borderRadius: '10px', border: '1px solid #00e5ff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <strong>{slot.date}</strong> - {slot.time} a {slot.endTime || slot.time}
+                </div>
+                <button onClick={() => reserve(slot)} style={{ background: '#00ff88', border: 'none', padding: '8px 12px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '6px' }}>Reservar</button>
               </div>
-              <button onClick={() => reserve(slot)} style={{ background: '#00ff88', border: 'none', padding: '8px 12px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '6px' }}>Reservar</button>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
