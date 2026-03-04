@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { getCurrentUser, fetchUserAttributes, signIn, signOut } from 'aws-amplify/auth';
+import { getCurrentUser, fetchAuthSession, fetchUserAttributes, signIn, signOut } from 'aws-amplify/auth';
 import { useRouter } from 'next/navigation';
 import { createProfessionalProfile, createUserProfile, getProfessionalProfileByOwner, getUserProfileByOwner } from '../lib/graphqlClient';
 import { ProType, UserRole } from '../API';
@@ -103,6 +103,19 @@ export default function HomePage() {
     }
   }
 
+  async function waitForAuthReady(retries = 6, delayMs = 250) {
+    for (let attempt = 0; attempt < retries; attempt += 1) {
+      try {
+        await fetchAuthSession({ forceRefresh: true });
+        await getCurrentUser();
+        return;
+      } catch (err) {
+        if (attempt === retries - 1) throw err;
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+  }
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -116,6 +129,7 @@ export default function HomePage() {
       }
       const signInResult = await signIn({ username: email.trim(), password });
       if (signInResult?.isSignedIn) {
+        await waitForAuthReady();
         await checkAuthState();
       } else {
         const step = signInResult?.nextStep?.signInStep;
