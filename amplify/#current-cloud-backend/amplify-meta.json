@@ -25,8 +25,8 @@
         "AppClientID": "7gqnjuj6gfm30bcc5jqv66ref",
         "AppClientIDWeb": "7gqnjuj6gfm30bcc5jqv66ref",
         "HostedUIDomain": "us-east-1yesaecyp9",
-        "IdentityPoolId": "us-east-1:9286ec46-f0ed-4ddc-a3d2-94c6a7973825",
-        "IdentityPoolName": "taxmvpd8e247c7_identitypool_d8e247c7__master"
+        "IdentityPoolId": "us-east-1:ce1b331f-39ca-4286-886e-0bdd5813b451",
+        "IdentityPoolName": "taxmvp_identitypool_master"
       },
       "frontendAuthConfig": {
         "socialProviders": [],

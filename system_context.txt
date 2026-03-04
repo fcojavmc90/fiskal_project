@@ -1,0 +1,83 @@
+TAX-MVP — System Overview (Baseline)
+Date: 2026-03-04
+Repo root: /home/userpythontest/tax-mvp
+Environment: master
+Region: us-east-1
+
+Purpose
+- Plataforma FISKAL para conectar clientes con profesionales fiscales, con flujo de encuesta, selección de profesional, agenda, pagos y videollamadas.
+
+Core User Flows
+- Auth: Login, registro, confirmación de email.
+- Perfil: crea UserProfile y (si corresponde) ProfessionalProfile.
+- Cliente:
+  - Completa encuesta fiscal (20 preguntas + adjuntos).
+  - Selecciona profesional (ranking básico por palabras clave).
+  - Pago inicial (unlock agenda) vía Square.
+  - Agenda y reserva con el profesional.
+  - Dashboard con citas, casos, mensajes y pagos.
+- Profesional:
+  - Crea horarios disponibles (agenda).
+  - Administra solicitudes de cita y reprogramaciones.
+  - Gestiona casos, documentos y chat.
+  - Envía links de pago y finaliza casos.
+- Videollamadas:
+  - Chime meeting creado por API backend.
+  - Manejo de reconexión y recreación de reunión en cliente.
+
+UI / Routes (Next.js App Router)
+- Login: / (src/app/page.tsx)
+- Registro: /register
+- Confirmación: /confirm-email
+- Encuesta: /survey
+- Profesionales: /professionals y /professionals/recommended
+- Pago inicial: /checkout
+- Agenda: /agenda
+- Booking directo: /client/booking?pro=<PRO_SUB>
+- Dashboard Cliente: /dashboard-client
+- Dashboard Profesional: /expert-dashboard
+- Videollamada: /call
+- Pago de servicio: /pay?payment=<ID>
+
+Backend / APIs
+- GraphQL (AppSync) usado para perfiles, agendas, citas, casos, pagos y mensajes.
+- API Chime: src/app/api/chime/meeting/route.ts
+  - Soporta fallback a Lambda URL y credenciales directas.
+
+Storage
+- Se usa Amplify Storage para subir adjuntos de encuesta y documentos de caso.
+- Storage requiere Identity Pool válido si se usan credenciales IAM desde frontend.
+
+Payments
+- Square Payment: componente SquarePayment
+- Pagos: unlock inicial + pagos 50/50 por caso
+
+Auth (Cognito)
+- User Pool ID objetivo: us-east-1_yEsaEcYp9
+- Client ID (actual en aws-exports.js): 7gqnjuj6gfm30bcc5jqv66ref
+- Identity Pool (config actual en repo): us-east-1:ce1b331f-39ca-4286-886e-0bdd5813b451
+  - Nombre: taxmvp_identitypool_master
+  - Estado: creado en us-east-1 y enlazado al User Pool us-east-1_yEsaEcYp9.
+
+Amplify
+- Current Environment: master
+- Amplify App Id: du8dnlaswt97m
+- team-provider-info.json apunta a master.
+
+Key Technical Enhancements in tax-mvp
+- Registro con fallback si fallan atributos custom.
+- Resolución de rol robusta: atributos + UserProfile + pending profile local.
+- Bloqueo de profesional si el cliente canceló una cita.
+- ChimeCall con recreación de reunión y logging.
+
+Known Issue / Normalization Target
+- Alinear configuración para que toda la app use el User Pool us-east-1_yEsaEcYp9.
+- Identity Pool activo: us-east-1:ce1b331f-39ca-4286-886e-0bdd5813b451 (taxmvp_identitypool_master).
+
+Notes
+- El proyecto duplicado fue movido a /tmp/fiskal_project_backup_2026-03-04.
+
+Credentials
+- GitHub user: fcojavmc90.
+- GitHub token file location: Escritorio/github_token.txt.
+- Square access token file location: Escritorio/square_access_token.txt.
