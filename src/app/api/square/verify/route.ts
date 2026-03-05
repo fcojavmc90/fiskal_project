@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+export const runtime = 'nodejs';
 export async function GET() {
   try {
     const isProd = (process.env.SQUARE_ENV || 'sandbox') === 'production';

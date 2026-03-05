@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+export const runtime = 'nodejs';
 const SANDBOX_BASE = 'https://connect.squareupsandbox.com';
 const PROD_BASE = 'https://connect.squareup.com';
 
