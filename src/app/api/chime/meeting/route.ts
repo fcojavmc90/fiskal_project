@@ -40,45 +40,24 @@ export async function POST(req: Request) {
         }
       })();
       if (!lambdaRes.ok) {
-        if (!ACCESS_KEY_ID || !SECRET_ACCESS_KEY) {
-          return NextResponse.json(
-            {
-              error: lambdaJson?.error || "Chime lambda error",
-              usingLambda: true,
-              hasLambdaUrl: true,
-              lambdaStatus: lambdaRes.status,
-              lambdaBody: lambdaText?.slice(0, 600) || "",
-            },
-            { status: lambdaRes.status }
-          );
-        }
-        // Fall back to SDK if Lambda failed but credentials exist.
+        // Lambda failed; fall back to SDK (explicit creds if present, otherwise default chain).
       }
       if (lambdaRes.ok) {
         return NextResponse.json(lambdaJson ?? { ok: true }, { status: lambdaRes.status });
       }
     }
 
-    if (!ACCESS_KEY_ID || !SECRET_ACCESS_KEY) {
-      return NextResponse.json(
-        {
-          error: "Missing Chime credentials",
-          usingLambda: false,
-          hasLambdaUrl: Boolean(CHIME_LAMBDA_URL),
-          hasAccessKey: Boolean(ACCESS_KEY_ID),
-          hasSecretKey: Boolean(SECRET_ACCESS_KEY),
-          hasRegion: Boolean(REGION),
-        },
-        { status: 500 }
-      );
-    }
-
+    const hasExplicitCreds = Boolean(ACCESS_KEY_ID && SECRET_ACCESS_KEY);
     const client = new ChimeSDKMeetingsClient({
       region: REGION,
-      credentials: {
-        accessKeyId: ACCESS_KEY_ID,
-        secretAccessKey: SECRET_ACCESS_KEY,
-      },
+      ...(hasExplicitCreds
+        ? {
+            credentials: {
+              accessKeyId: ACCESS_KEY_ID,
+              secretAccessKey: SECRET_ACCESS_KEY,
+            },
+          }
+        : {}),
     });
 
     const meetingRes = await client.send(
