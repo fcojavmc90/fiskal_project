@@ -97,6 +97,16 @@ export async function POST(req: Request) {
       proJoinToken: proAttendee.Attendee?.JoinToken || "",
     });
   } catch (err: any) {
-    return NextResponse.json({ error: err?.message || "Chime error" }, { status: 500 });
+    const ACCESS_KEY_ID = process.env.CHIME_AWS_ACCESS_KEY_ID || "";
+    const SECRET_ACCESS_KEY = process.env.CHIME_AWS_SECRET_ACCESS_KEY || "";
+    return NextResponse.json(
+      {
+        error: err?.message || "Chime error",
+        hasAccessKey: Boolean(ACCESS_KEY_ID),
+        hasSecretKey: Boolean(SECRET_ACCESS_KEY),
+        hasRegion: Boolean(process.env.CHIME_AWS_REGION || process.env.AWS_REGION),
+      },
+      { status: 500 }
+    );
   }
 }
