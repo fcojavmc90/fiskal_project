@@ -42,6 +42,39 @@ export default function ChimeCall({ appointmentId, role, token, embedded, fullHe
   const startedRef = useRef(false);
   const recreateAttemptRef = useRef(false);
 
+  const stopMediaTracks = () => {
+    const elements = [localVideoRef.current, remoteVideoRef.current, audioRef.current];
+    for (const el of elements) {
+      const mediaEl = el as HTMLMediaElement | null;
+      const stream = mediaEl?.srcObject as MediaStream | null;
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        mediaEl!.srcObject = null;
+      }
+    }
+  };
+
+  const stopSession = async () => {
+    const meetingSession = meetingSessionRef.current;
+    const audioVideo = meetingSession?.audioVideo;
+    if (audioVideo) {
+      try {
+        audioVideo.stopLocalVideoTile();
+      } catch {}
+      try {
+        await audioVideo.stopVideoInput();
+      } catch {}
+      try {
+        await audioVideo.stopAudioInput();
+      } catch {}
+      try {
+        audioVideo.stop();
+      } catch {}
+    }
+    stopMediaTracks();
+    meetingSessionRef.current = null;
+  };
+
   const logDebug = (msg: string) => {
     setDebugLines(prev => {
       const next = [...prev, `[${new Date().toLocaleTimeString()}] ${msg}`];
@@ -245,10 +278,7 @@ export default function ChimeCall({ appointmentId, role, token, embedded, fullHe
 
     return () => {
       mounted = false;
-      const meetingSession = meetingSessionRef.current;
-      if (meetingSession) {
-        meetingSession.audioVideo.stop();
-      }
+      void stopSession();
     };
   }, [appointmentId, role, token]);
 
@@ -309,10 +339,7 @@ export default function ChimeCall({ appointmentId, role, token, embedded, fullHe
   };
 
   const leaveCall = () => {
-    const meetingSession = meetingSessionRef.current;
-    if (meetingSession) {
-      meetingSession.audioVideo.stop();
-    }
+    void stopSession();
     if (onLeave) {
       onLeave();
       return;
