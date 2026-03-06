@@ -25,6 +25,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing appointment data" }, { status: 400 });
     }
 
+    const hasExplicitCreds = Boolean(ACCESS_KEY_ID && SECRET_ACCESS_KEY);
+
     if (CHIME_LAMBDA_URL && !FORCE_SDK) {
       const lambdaRes = await fetch(CHIME_LAMBDA_URL, {
         method: "POST",
@@ -40,14 +42,23 @@ export async function POST(req: Request) {
         }
       })();
       if (!lambdaRes.ok) {
-        // Lambda failed; fall back to SDK (explicit creds if present, otherwise default chain).
+        // Lambda failed; only fall back to SDK if explicit creds are configured.
+        if (!hasExplicitCreds) {
+          return NextResponse.json(
+            {
+              error: "Chime Lambda failed and no explicit SDK credentials are configured.",
+              lambdaStatus: lambdaRes.status,
+              lambdaBody: lambdaText?.slice(0, 500) || "",
+            },
+            { status: 502 }
+          );
+        }
       }
       if (lambdaRes.ok) {
         return NextResponse.json(lambdaJson ?? { ok: true }, { status: lambdaRes.status });
       }
     }
 
-    const hasExplicitCreds = Boolean(ACCESS_KEY_ID && SECRET_ACCESS_KEY);
     const client = new ChimeSDKMeetingsClient({
       region: REGION,
       ...(hasExplicitCreds
