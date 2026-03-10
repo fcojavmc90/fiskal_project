@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { ChimeSDKMeetingsClient, CreateAttendeeCommand, CreateMeetingCommand } from "@aws-sdk/client-chime-sdk-meetings";
-import { getChimeConfig } from "../../../lib/chimeConfig";
+import { getChimeConfig } from "../../../../lib/chimeConfig";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

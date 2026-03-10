@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getChimeConfig } from "../../../lib/chimeConfig";
+import { getChimeConfig } from "../../../../lib/chimeConfig";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
