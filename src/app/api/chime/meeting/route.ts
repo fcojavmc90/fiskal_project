@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import crypto from "node:crypto";
 import { ChimeSDKMeetingsClient, CreateAttendeeCommand, CreateMeetingCommand } from "@aws-sdk/client-chime-sdk-meetings";
+import { getChimeConfig } from "../../../lib/chimeConfig";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,30 +12,34 @@ function shortId(id: string, max: number) {
 }
 
 export async function POST(req: Request) {
+  let lambdaStatus: number | undefined;
+  let lambdaBody: string | undefined;
   try {
-    const REGION = process.env.CHIME_AWS_REGION || process.env.AWS_REGION || "us-east-1";
-    const ACCESS_KEY_ID = process.env.CHIME_AWS_ACCESS_KEY_ID || "";
-    const SECRET_ACCESS_KEY = process.env.CHIME_AWS_SECRET_ACCESS_KEY || "";
+    const config = await getChimeConfig();
+    const REGION = config.region || "us-east-1";
+    const ACCESS_KEY_ID = config.accessKeyId || "";
+    const SECRET_ACCESS_KEY = config.secretAccessKey || "";
     const FORCE_SDK = process.env.CHIME_FORCE_SDK === "true";
+    const USE_LAMBDA = process.env.CHIME_USE_LAMBDA === "true";
     const DEFAULT_LAMBDA_URL = "https://qxi6j7zrocm4zeu34a3awjjn5q0garmg.lambda-url.us-east-1.on.aws/";
-    const CHIME_LAMBDA_URL =
-      process.env.CHIME_LAMBDA_URL ||
-      process.env.NEXT_PUBLIC_CHIME_LAMBDA_URL ||
-      DEFAULT_LAMBDA_URL;
+    const CHIME_LAMBDA_URL = config.lambdaUrl || DEFAULT_LAMBDA_URL;
     const { appointmentId, clientOwner, proOwner } = await req.json();
     if (!appointmentId || !clientOwner || !proOwner) {
       return NextResponse.json({ error: "Missing appointment data" }, { status: 400 });
     }
 
     const hasExplicitCreds = Boolean(ACCESS_KEY_ID && SECRET_ACCESS_KEY);
+    // track Lambda failure details for diagnostics if SDK fallback fails
 
-    if (CHIME_LAMBDA_URL && !FORCE_SDK) {
+    if (USE_LAMBDA && CHIME_LAMBDA_URL && !FORCE_SDK) {
       const lambdaRes = await fetch(CHIME_LAMBDA_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ appointmentId, clientOwner, proOwner }),
       });
       const lambdaText = await lambdaRes.text();
+      lambdaStatus = lambdaRes.status;
+      lambdaBody = lambdaText?.slice(0, 500) || "";
       const lambdaJson = (() => {
         try {
           return JSON.parse(lambdaText);
@@ -41,19 +47,6 @@ export async function POST(req: Request) {
           return null;
         }
       })();
-      if (!lambdaRes.ok) {
-        // Lambda failed; only fall back to SDK if explicit creds are configured.
-        if (!hasExplicitCreds) {
-          return NextResponse.json(
-            {
-              error: "Chime Lambda failed and no explicit SDK credentials are configured.",
-              lambdaStatus: lambdaRes.status,
-              lambdaBody: lambdaText?.slice(0, 500) || "",
-            },
-            { status: 502 }
-          );
-        }
-      }
       if (lambdaRes.ok) {
         return NextResponse.json(lambdaJson ?? { ok: true }, { status: lambdaRes.status });
       }
@@ -108,14 +101,15 @@ export async function POST(req: Request) {
       proJoinToken: proAttendee.Attendee?.JoinToken || "",
     });
   } catch (err: any) {
-    const ACCESS_KEY_ID = process.env.CHIME_AWS_ACCESS_KEY_ID || "";
-    const SECRET_ACCESS_KEY = process.env.CHIME_AWS_SECRET_ACCESS_KEY || "";
+    const config = await getChimeConfig();
     return NextResponse.json(
       {
         error: err?.message || "Chime error",
-        hasAccessKey: Boolean(ACCESS_KEY_ID),
-        hasSecretKey: Boolean(SECRET_ACCESS_KEY),
-        hasRegion: Boolean(process.env.CHIME_AWS_REGION || process.env.AWS_REGION),
+        hasAccessKey: Boolean(config.accessKeyId),
+        hasSecretKey: Boolean(config.secretAccessKey),
+        hasRegion: Boolean(config.region),
+        lambdaStatus,
+        lambdaBody,
       },
       { status: 500 }
     );
