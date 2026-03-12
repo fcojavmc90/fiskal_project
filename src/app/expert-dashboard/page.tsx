@@ -218,6 +218,44 @@ export default function ExpertDashboard() {
     return Array.from(candidates);
   };
 
+  const buildAccessAttempts = (
+    rawKey: string,
+    parsed: { key: string; accessLevel: 'protected' | 'private' | 'public'; targetIdentityId: string | null },
+    clientOwner?: string
+  ) => {
+    const attempts: Array<{ key: string; options: any }> = [];
+    const baseOptions = {
+      accessLevel: parsed.accessLevel,
+      ...(parsed.targetIdentityId ? { targetIdentityId: parsed.targetIdentityId } : {}),
+      expiresIn: 3600,
+      validateObjectExistence: true,
+    } as any;
+    const candidates = buildKeyCandidates(parsed, rawKey, clientOwner);
+    for (const key of candidates) {
+      attempts.push({ key, options: baseOptions });
+    }
+
+    const rawLooksPrefixed = rawKey.startsWith('protected/') || rawKey.startsWith('private/') || rawKey.startsWith('public/');
+    if (rawLooksPrefixed) {
+      const publicOptions = { accessLevel: 'public', expiresIn: 3600, validateObjectExistence: true } as any;
+      attempts.push({ key: rawKey, options: publicOptions });
+      if (rawKey.includes('%')) {
+        try {
+          const decoded = decodeURIComponent(rawKey);
+          attempts.push({ key: decoded, options: publicOptions });
+        } catch {}
+      }
+    }
+
+    if (!rawLooksPrefixed && parsed.targetIdentityId) {
+      const fullKey = `protected/${parsed.targetIdentityId}/${parsed.key}`;
+      const publicOptions = { accessLevel: 'public', expiresIn: 3600, validateObjectExistence: true } as any;
+      attempts.push({ key: fullKey, options: publicOptions });
+    }
+
+    return attempts;
+  };
+
   const loadCaseDocs = async (caseId: string) => {
     if (!caseId || docsLoading[caseId]) return;
     setDocsLoading(prev => ({ ...prev, [caseId]: true }));
@@ -344,17 +382,11 @@ export default function ExpertDashboard() {
   const openDoc = async (doc: any) => {
     if (!doc?.parsedKey) return;
     try {
-      const options = {
-        accessLevel: doc.parsedKey.accessLevel,
-        ...(doc.parsedKey.targetIdentityId ? { targetIdentityId: doc.parsedKey.targetIdentityId } : {}),
-        expiresIn: 3600,
-        validateObjectExistence: true,
-      } as any;
-      const candidates = buildKeyCandidates(doc.parsedKey, doc.s3Key || '', doc.clientOwner);
+      const attempts = buildAccessAttempts(doc.s3Key || '', doc.parsedKey, doc.clientOwner);
       let lastError: any = null;
-      for (const key of candidates) {
+      for (const attempt of attempts) {
         try {
-          const result = await getUrl({ key, options });
+          const result = await getUrl({ key: attempt.key, options: attempt.options });
           const url = result.url?.toString?.() ?? String(result.url);
           if (!url) throw new Error('URL inválida');
           try {
