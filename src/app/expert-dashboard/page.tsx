@@ -183,6 +183,28 @@ export default function ExpertDashboard() {
     return { key: rawKey, accessLevel: 'protected', targetIdentityId: null };
   };
 
+  const looksLikeIdentityId = (value?: string | null) => {
+    if (!value) return false;
+    return /^[a-z0-9-]+:[a-z0-9-]+$/i.test(value);
+  };
+
+  const buildKeyCandidates = (parsed: { key: string; accessLevel: 'protected' | 'private' | 'public'; targetIdentityId: string | null }) => {
+    const candidates = new Set<string>();
+    if (parsed.key) candidates.add(parsed.key);
+    if (parsed.key.includes('%')) {
+      try {
+        const decoded = decodeURIComponent(parsed.key);
+        if (decoded) candidates.add(decoded);
+      } catch {}
+    }
+    const parts = parsed.key.split('/');
+    if (parts[0] === 'survey' && parts.length >= 3 && looksLikeIdentityId(parts[1])) {
+      const withoutIdentity = ['survey', ...parts.slice(2)].join('/');
+      candidates.add(withoutIdentity);
+    }
+    return Array.from(candidates);
+  };
+
   const loadCaseDocs = async (caseId: string) => {
     if (!caseId || docsLoading[caseId]) return;
     setDocsLoading(prev => ({ ...prev, [caseId]: true }));
@@ -309,17 +331,39 @@ export default function ExpertDashboard() {
   const openDoc = async (doc: any) => {
     if (!doc?.parsedKey) return;
     try {
-      const result = await getUrl({
-        key: doc.parsedKey.key,
-        options: {
-          accessLevel: doc.parsedKey.accessLevel,
-          ...(doc.parsedKey.targetIdentityId ? { targetIdentityId: doc.parsedKey.targetIdentityId } : {}),
-          expiresIn: 3600,
-        },
-      });
-      const url = result.url?.toString?.() ?? String(result.url);
-      if (!url) throw new Error('URL inválida');
-      window.open(url, '_blank', 'noopener,noreferrer');
+      const options = {
+        accessLevel: doc.parsedKey.accessLevel,
+        ...(doc.parsedKey.targetIdentityId ? { targetIdentityId: doc.parsedKey.targetIdentityId } : {}),
+        expiresIn: 3600,
+        validateObjectExistence: true,
+      } as any;
+      const candidates = buildKeyCandidates(doc.parsedKey);
+      let lastError: any = null;
+      for (const key of candidates) {
+        try {
+          const result = await getUrl({ key, options });
+          const url = result.url?.toString?.() ?? String(result.url);
+          if (!url) throw new Error('URL inválida');
+          try {
+            const resp = await fetch(url, { method: 'HEAD' });
+            if (!resp.ok) {
+              lastError = new Error(`No se encontró el archivo (${resp.status}).`);
+              continue;
+            }
+          } catch (headErr: any) {
+            if (headErr?.name !== 'TypeError') {
+              lastError = headErr;
+              continue;
+            }
+            // Si CORS bloquea el HEAD, abrimos igual.
+          }
+          window.open(url, '_blank', 'noopener,noreferrer');
+          return;
+        } catch (err: any) {
+          lastError = err;
+        }
+      }
+      throw lastError || new Error('No se pudo generar el enlace');
     } catch (err: any) {
       alert(err?.message || 'No se pudo generar el enlace');
     }
