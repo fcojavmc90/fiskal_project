@@ -178,7 +178,8 @@ export default function ExpertDashboard() {
       return { key, accessLevel, targetIdentityId };
     }
     if (parts.length >= 2 && parts[0] === 'survey') {
-      return { key: rawKey, accessLevel: 'protected', targetIdentityId: parts[1] || null };
+      const targetIdentityId = looksLikeIdentityId(parts[1]) ? parts[1] : null;
+      return { key: rawKey, accessLevel: 'protected', targetIdentityId };
     }
     return { key: rawKey, accessLevel: 'protected', targetIdentityId: null };
   };
@@ -188,19 +189,31 @@ export default function ExpertDashboard() {
     return /^[a-z0-9-]+:[a-z0-9-]+$/i.test(value);
   };
 
-  const buildKeyCandidates = (parsed: { key: string; accessLevel: 'protected' | 'private' | 'public'; targetIdentityId: string | null }) => {
+  const buildKeyCandidates = (
+    parsed: { key: string; accessLevel: 'protected' | 'private' | 'public'; targetIdentityId: string | null },
+    rawKey: string,
+    clientOwner?: string
+  ) => {
     const candidates = new Set<string>();
     if (parsed.key) candidates.add(parsed.key);
+    if (rawKey && rawKey !== parsed.key) candidates.add(rawKey);
     if (parsed.key.includes('%')) {
       try {
         const decoded = decodeURIComponent(parsed.key);
         if (decoded) candidates.add(decoded);
       } catch {}
     }
+    if (parsed.key.includes('+')) {
+      candidates.add(parsed.key.replace(/\+/g, ' '));
+    }
     const parts = parsed.key.split('/');
     if (parts[0] === 'survey' && parts.length >= 3 && looksLikeIdentityId(parts[1])) {
       const withoutIdentity = ['survey', ...parts.slice(2)].join('/');
       candidates.add(withoutIdentity);
+    }
+    if (parts[0] === 'survey' && parts.length >= 3 && clientOwner) {
+      const withClient = ['survey', clientOwner, ...parts.slice(2)].join('/');
+      candidates.add(withClient);
     }
     return Array.from(candidates);
   };
@@ -337,7 +350,7 @@ export default function ExpertDashboard() {
         expiresIn: 3600,
         validateObjectExistence: true,
       } as any;
-      const candidates = buildKeyCandidates(doc.parsedKey);
+      const candidates = buildKeyCandidates(doc.parsedKey, doc.s3Key || '', doc.clientOwner);
       let lastError: any = null;
       for (const key of candidates) {
         try {
