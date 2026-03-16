@@ -4,6 +4,7 @@ type ChimeConfig = {
   secretAccessKey: string;
   lambdaUrl: string;
   fromEnv: boolean;
+  fromSsm: boolean;
 };
 
 const CACHE_MS = 5 * 60 * 1000;
@@ -27,7 +28,7 @@ export async function getChimeConfig(): Promise<ChimeConfig> {
   let lambdaUrl = env.lambdaUrl;
   let fromEnv = Boolean(accessKeyId || secretAccessKey || lambdaUrl);
 
-  const value = { region, accessKeyId, secretAccessKey, lambdaUrl, fromEnv };
+  const value = { region, accessKeyId, secretAccessKey, lambdaUrl, fromEnv, fromSsm: false };
   cached = { value, ts: Date.now() };
   return value;
 }
