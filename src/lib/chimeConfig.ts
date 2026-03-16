@@ -1,12 +1,9 @@
-import { GetParametersCommand, SSMClient } from "@aws-sdk/client-ssm";
-
 type ChimeConfig = {
   region: string;
   accessKeyId: string;
   secretAccessKey: string;
   lambdaUrl: string;
   fromEnv: boolean;
-  fromSsm: boolean;
 };
 
 const CACHE_MS = 5 * 60 * 1000;
@@ -20,16 +17,6 @@ const readEnv = () => {
   return { region, accessKeyId, secretAccessKey, lambdaUrl };
 };
 
-const ssmNames = () => {
-  const prefix = process.env.CHIME_SSM_PREFIX || "/fiskal/chime/";
-  return {
-    accessKeyId: process.env.CHIME_SSM_PARAM_ACCESS_KEY_ID || `${prefix}access_key_id`,
-    secretAccessKey: process.env.CHIME_SSM_PARAM_SECRET_ACCESS_KEY || `${prefix}secret_access_key`,
-    region: process.env.CHIME_SSM_PARAM_REGION || `${prefix}region`,
-    lambdaUrl: process.env.CHIME_SSM_PARAM_LAMBDA_URL || `${prefix}lambda_url`,
-  };
-};
-
 export async function getChimeConfig(): Promise<ChimeConfig> {
   if (cached && Date.now() - cached.ts < CACHE_MS) return cached.value;
 
@@ -39,39 +26,8 @@ export async function getChimeConfig(): Promise<ChimeConfig> {
   let secretAccessKey = env.secretAccessKey;
   let lambdaUrl = env.lambdaUrl;
   let fromEnv = Boolean(accessKeyId || secretAccessKey || lambdaUrl);
-  let fromSsm = false;
 
-  const needSsm =
-    !accessKeyId ||
-    !secretAccessKey ||
-    !lambdaUrl ||
-    (!env.region && Boolean(process.env.AWS_REGION) === false);
-
-  if (needSsm) {
-    try {
-      const names = ssmNames();
-      const toFetch: string[] = [];
-      if (!accessKeyId) toFetch.push(names.accessKeyId);
-      if (!secretAccessKey) toFetch.push(names.secretAccessKey);
-      if (!lambdaUrl) toFetch.push(names.lambdaUrl);
-      if (!env.region) toFetch.push(names.region);
-
-      if (toFetch.length > 0) {
-        const ssm = new SSMClient({ region });
-        const resp = await ssm.send(new GetParametersCommand({ Names: toFetch, WithDecryption: true }));
-        const map = new Map((resp.Parameters || []).map(p => [p.Name || "", p.Value || ""]));
-        if (!accessKeyId) accessKeyId = map.get(names.accessKeyId) || "";
-        if (!secretAccessKey) secretAccessKey = map.get(names.secretAccessKey) || "";
-        if (!lambdaUrl) lambdaUrl = map.get(names.lambdaUrl) || "";
-        if (!env.region) region = map.get(names.region) || region;
-        fromSsm = Boolean(accessKeyId || secretAccessKey || lambdaUrl || map.get(names.region));
-      }
-    } catch {
-      // Swallow SSM errors to allow env-only usage.
-    }
-  }
-
-  const value = { region, accessKeyId, secretAccessKey, lambdaUrl, fromEnv, fromSsm };
+  const value = { region, accessKeyId, secretAccessKey, lambdaUrl, fromEnv };
   cached = { value, ts: Date.now() };
   return value;
 }

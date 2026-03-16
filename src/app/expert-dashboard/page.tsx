@@ -109,7 +109,8 @@ export default function ExpertDashboard() {
       return;
     }
     const appts = await listAppointmentsByPro(sub);
-    setAppointments(appts.filter((a: any) => a.status !== AppointmentStatus.CANCELLED));
+    const activeAppts = appts.filter((a: any) => a.status !== AppointmentStatus.CANCELLED);
+    setAppointments(dedupeAppointments(activeAppts));
     await hydrateClientNames(appts);
     const agenda = await listAgendaByProfessional(sub);
     const sortedAgenda = [...agenda].sort((a: any, b: any) => {
@@ -131,6 +132,33 @@ export default function ExpertDashboard() {
     if (Object.keys(priceMap).length) {
       setServicePriceByAppt(prev => ({ ...prev, ...priceMap }));
     }
+  };
+
+  const dedupeAppointments = (items: any[]) => {
+    const getSlotId = (notes?: string | null) => {
+      if (!notes) return null;
+      const match = notes.match(/slotId:([^\s]+)/);
+      return match ? match[1] : null;
+    };
+    const byKey = new Map<string, any>();
+    for (const appt of items) {
+      const slotId = getSlotId(appt?.notes);
+      const base = slotId
+        ? `slot:${slotId}`
+        : `time:${appt?.requestedStart || ''}|${appt?.requestedEnd || ''}`;
+      const key = `${base}|client:${appt?.clientOwner || ''}|pro:${appt?.proOwner || ''}`;
+      const prev = byKey.get(key);
+      if (!prev) {
+        byKey.set(key, appt);
+        continue;
+      }
+      const prevCreated = prev?.createdAt || '';
+      const nextCreated = appt?.createdAt || '';
+      if (nextCreated >= prevCreated) {
+        byKey.set(key, appt);
+      }
+    }
+    return Array.from(byKey.values());
   };
 
   const hydrateClientNames = async (appts: any[]) => {
@@ -167,7 +195,13 @@ export default function ExpertDashboard() {
 
   const parseStorageKey = (rawKey: string) => {
     if (!rawKey) return { key: rawKey, accessLevel: 'protected', targetIdentityId: null };
-    const parts = rawKey.split('/');
+    let normalized = rawKey;
+    if (normalized.includes('%')) {
+      try {
+        normalized = decodeURIComponent(normalized);
+      } catch {}
+    }
+    const parts = normalized.split('/');
     if (parts[0] === 'protected' || parts[0] === 'private' || parts[0] === 'public') {
       const accessLevel = parts[0] as 'protected' | 'private' | 'public';
       if (accessLevel === 'public') {
@@ -179,9 +213,9 @@ export default function ExpertDashboard() {
     }
     if (parts.length >= 2 && parts[0] === 'survey') {
       const targetIdentityId = looksLikeIdentityId(parts[1]) ? parts[1] : null;
-      return { key: rawKey, accessLevel: 'protected', targetIdentityId };
+      return { key: normalized, accessLevel: 'protected', targetIdentityId };
     }
-    return { key: rawKey, accessLevel: 'protected', targetIdentityId: null };
+    return { key: normalized, accessLevel: 'protected', targetIdentityId: null };
   };
 
   const looksLikeIdentityId = (value?: string | null) => {
@@ -228,7 +262,6 @@ export default function ExpertDashboard() {
       accessLevel: parsed.accessLevel,
       ...(parsed.targetIdentityId ? { targetIdentityId: parsed.targetIdentityId } : {}),
       expiresIn: 3600,
-      validateObjectExistence: true,
     } as any;
     const candidates = buildKeyCandidates(parsed, rawKey, clientOwner);
     for (const key of candidates) {
@@ -237,7 +270,7 @@ export default function ExpertDashboard() {
 
     const rawLooksPrefixed = rawKey.startsWith('protected/') || rawKey.startsWith('private/') || rawKey.startsWith('public/');
     if (rawLooksPrefixed) {
-      const publicOptions = { accessLevel: 'public', expiresIn: 3600, validateObjectExistence: true } as any;
+      const publicOptions = { accessLevel: 'public', expiresIn: 3600 } as any;
       attempts.push({ key: rawKey, options: publicOptions });
       if (rawKey.includes('%')) {
         try {
@@ -249,7 +282,7 @@ export default function ExpertDashboard() {
 
     if (!rawLooksPrefixed && parsed.targetIdentityId) {
       const fullKey = `protected/${parsed.targetIdentityId}/${parsed.key}`;
-      const publicOptions = { accessLevel: 'public', expiresIn: 3600, validateObjectExistence: true } as any;
+      const publicOptions = { accessLevel: 'public', expiresIn: 3600 } as any;
       attempts.push({ key: fullKey, options: publicOptions });
     }
 
@@ -389,19 +422,6 @@ export default function ExpertDashboard() {
           const result = await getUrl({ key: attempt.key, options: attempt.options });
           const url = result.url?.toString?.() ?? String(result.url);
           if (!url) throw new Error('URL inválida');
-          try {
-            const resp = await fetch(url, { method: 'HEAD' });
-            if (!resp.ok) {
-              lastError = new Error(`No se encontró el archivo (${resp.status}).`);
-              continue;
-            }
-          } catch (headErr: any) {
-            if (headErr?.name !== 'TypeError') {
-              lastError = headErr;
-              continue;
-            }
-            // Si CORS bloquea el HEAD, abrimos igual.
-          }
           window.open(url, '_blank', 'noopener,noreferrer');
           return;
         } catch (err: any) {
