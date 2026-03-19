@@ -89,7 +89,8 @@ export default function ClientDashboard() {
           const active = uniqueAppointments.filter((a: any) => a.status !== AppointmentStatus.CANCELLED);
           setAppointments(active);
           const caseItems = await listCasesByClientOwner(sub);
-          setCases(dedupeByKey(caseItems, (c: any) => {
+          const activeCases = (caseItems || []).filter((c: any) => c?.status !== 'CANCELLED');
+          setCases(dedupeByKey(activeCases, (c: any) => {
             if (c?.id) return c.id;
             const key = [c?.caseNumber, c?.appointmentId, c?.professionalId, c?.clientOwner]
               .filter(Boolean)
