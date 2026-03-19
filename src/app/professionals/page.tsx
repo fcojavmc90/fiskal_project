@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { listProfessionalProfiles, listSurveyResponsesByOwner } from '../../lib/graphqlClient';
 import { parseSurveyAnswers } from '../../lib/survey';
-import { getCurrentUser, fetchUserAttributes } from 'aws-amplify/auth';
+import { getCurrentUser, fetchAuthSession, fetchUserAttributes } from 'aws-amplify/auth';
 import { isAuthBypassed } from '../../lib/authBypass';
 
 type ProCard = {
@@ -35,6 +35,7 @@ export default function ProfessionalsPage() {
           setOwner('demo-user');
           return;
         }
+        await waitForAuthReady();
         const user = await getCurrentUser();
         const attr = await fetchUserAttributes();
         setOwner(attr.sub ?? user.userId ?? '');
@@ -52,6 +53,7 @@ export default function ProfessionalsPage() {
           setPros([]);
           return;
         }
+        await waitForAuthReady();
         console.log('[professionals] loading profiles for owner:', owner);
         const items = await listProfessionalProfiles();
         console.log('[professionals] listProfessionalProfiles result:', items);
@@ -94,6 +96,19 @@ export default function ProfessionalsPage() {
     };
     load();
   }, [owner]);
+
+  async function waitForAuthReady(retries = 3, delayMs = 400) {
+    for (let attempt = 0; attempt < retries; attempt += 1) {
+      try {
+        await fetchAuthSession({ forceRefresh: true });
+        await getCurrentUser();
+        return;
+      } catch {
+        if (attempt === retries - 1) return;
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+  }
 
   const selectPro = (pro: ProCard) => {
     localStorage.setItem('fiskal_selected_pro', JSON.stringify(pro));
