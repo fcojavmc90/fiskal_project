@@ -8,6 +8,7 @@ import Sidebar from '../../components/Sidebar';
 import { AppointmentStatus, CaseStatus, PaymentStatus, PaymentType, ProfessionalAgendaStatus } from '../../API';
 import { createMessage, createPayment, createProfessionalAgenda, deleteAppointment, deleteCase, deleteProfessionalAgenda, getProfessionalProfileByOwner, getUserProfileByOwner, listAgendaByProfessional, listAppointmentsByPro, listCaseDocumentsByCase, listCasesByProOwner, listMessagesByCase, listPaymentsByProOwner, listSurveyResponsesByOwnerAndPro, listSurveyResponsesByProOwner, updateAppointment, updateCase, updateProfessionalAgenda, updateSurveyResponse } from '../../lib/graphqlClient';
 import { isAuthBypassed } from '../../lib/authBypass';
+import { parseSurveyAnswers } from '../../lib/survey';
 
 const SURVEY_QUESTIONS: Array<{ id: string; label: string }> = [
   { id: 'q1', label: '¿Cuál es el número de la carta o aviso? (Ej: CP2000, CP14, Letter 3219, LTR 504)' },
@@ -428,7 +429,7 @@ export default function ExpertDashboard() {
         const bKey = b?.createdAt || '';
         return aKey.localeCompare(bKey);
       }).pop();
-      const payload = latest?.answersJson ? JSON.parse(latest.answersJson) : null;
+      const payload = parseSurveyAnswers(latest?.answersJson);
       setSurveyByClient(prev => ({ ...prev, [clientOwner]: payload }));
     } catch (err: any) {
       setSurveyError(prev => ({ ...prev, [clientOwner]: err?.message || 'No se pudo cargar la encuesta' }));

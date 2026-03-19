@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { listProfessionalProfiles, listSurveyResponsesByOwner } from '../../lib/graphqlClient';
+import { parseSurveyAnswers } from '../../lib/survey';
 import { getCurrentUser, fetchUserAttributes } from 'aws-amplify/auth';
 import { isAuthBypassed } from '../../lib/authBypass';
 
@@ -60,14 +61,7 @@ export default function ProfessionalsPage() {
             const surveys = await listSurveyResponsesByOwner(owner);
             console.log('[professionals] listSurveyResponsesByOwner result:', surveys);
             const latest = surveys.sort((a: any, b: any) => (a.createdAt || '').localeCompare(b.createdAt || '')).pop();
-            let payload: any = null;
-            if (latest?.answersJson) {
-              try {
-                payload = JSON.parse(latest.answersJson);
-              } catch {
-                payload = null;
-              }
-            }
+            const payload = parseSurveyAnswers(latest?.answersJson);
             const answersText = payload ? JSON.stringify(payload.answers ?? payload) : '';
             const scoreFor = (bio?: string | null) => {
               const t = `${answersText}`.toLowerCase();

@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getCurrentUser, fetchUserAttributes } from 'aws-amplify/auth';
 import { createAppointment, createCase, createCaseDocument, listAgendaByProfessional, listSurveyResponsesByOwner, updateProfessionalAgenda, updateSurveyResponse } from '../../lib/graphqlClient';
+import { parseSurveyAnswers } from '../../lib/survey';
 import { AppointmentStatus, CaseStatus, DocStatus, ProfessionalAgendaStatus } from '../../API';
 import { isAuthBypassed } from '../../lib/authBypass';
 
@@ -134,7 +135,7 @@ export default function AgendaPage() {
               });
             } catch {}
           }
-          let payload = latest?.answersJson ? JSON.parse(latest.answersJson) : null;
+          let payload = parseSurveyAnswers(latest?.answersJson);
           let files = payload?.files ?? [];
           if (!files.length) {
             try {
