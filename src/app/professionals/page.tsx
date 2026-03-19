@@ -53,9 +53,9 @@ export default function ProfessionalsPage() {
           setPros([]);
           return;
         }
-        await waitForAuthReady();
+        const token = await waitForAuthReady();
         console.log('[professionals] loading profiles for owner:', owner);
-        const items = await retryListProfessionalProfiles();
+        const items = await retryListProfessionalProfiles(token);
         console.log('[professionals] listProfessionalProfiles result:', items);
         let scored = items as ProCard[];
         if (owner) {
@@ -97,13 +97,26 @@ export default function ProfessionalsPage() {
     load();
   }, [owner]);
 
-  async function retryListProfessionalProfiles(retries = 3, delayMs = 500) {
+  async function waitForAuthReady(retries = 3, delayMs = 400): Promise<string | null> {
+    for (let attempt = 0; attempt < retries; attempt += 1) {
+      try {
+        const session = await fetchAuthSession({ forceRefresh: true });
+        await getCurrentUser();
+        return session?.tokens?.accessToken?.toString() ?? null;
+      } catch {
+        if (attempt === retries - 1) return null;
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+    return null;
+  }
+
+  async function retryListProfessionalProfiles(token: string | null, retries = 3, delayMs = 500) {
     let lastError: any = null;
     for (let attempt = 0; attempt < retries; attempt += 1) {
       try {
-        const result = await listProfessionalProfiles();
+        const result = await listProfessionalProfiles(token ?? undefined);
         if (Array.isArray(result) && result.length > 0) return result;
-        // If empty, wait once for auth/session propagation and retry.
         lastError = null;
       } catch (err) {
         lastError = err;
@@ -112,19 +125,6 @@ export default function ProfessionalsPage() {
     }
     if (lastError) throw lastError;
     return [];
-  }
-
-  async function waitForAuthReady(retries = 3, delayMs = 400) {
-    for (let attempt = 0; attempt < retries; attempt += 1) {
-      try {
-        await fetchAuthSession({ forceRefresh: true });
-        await getCurrentUser();
-        return;
-      } catch {
-        if (attempt === retries - 1) return;
-        await new Promise(resolve => setTimeout(resolve, delayMs));
-      }
-    }
   }
 
   const selectPro = (pro: ProCard) => {

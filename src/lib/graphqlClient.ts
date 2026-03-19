@@ -3,7 +3,12 @@ import { ensureAmplifyConfigured } from './amplifyClient';
 import type { AppointmentStatus, PaymentStatus, PaymentType, ProfessionalAgendaStatus, ProType, UserRole } from '../API';
 
 type SimpleGraphqlClient = {
-  graphql: (options: { query: string; variables?: Record<string, unknown> }) => Promise<any>;
+  graphql: (options: {
+    query: string;
+    variables?: Record<string, unknown>;
+    authMode?: string;
+    authToken?: string;
+  }) => Promise<any>;
 };
 
 let client: SimpleGraphqlClient | null = null;
@@ -240,9 +245,10 @@ export async function getUserProfileByOwner(owner: string) {
   return res.data?.listUserProfiles?.items?.[0] ?? null;
 }
 
-export async function listProfessionalProfiles() {
+export async function listProfessionalProfiles(authToken?: string) {
   const res = await getClient().graphql({
     query: listProfessionalProfilesQuery,
+    ...(authToken ? { authMode: "userPool", authToken } : {}),
   });
   return res.data?.listProfessionalProfiles?.items ?? [];
 }
