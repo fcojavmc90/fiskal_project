@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import ChimeCall from '../../components/ChimeCall';
 import Sidebar from '../../components/Sidebar';
 import { AppointmentStatus, CaseStatus, PaymentStatus, PaymentType, ProfessionalAgendaStatus } from '../../API';
-import { createMessage, createPayment, createProfessionalAgenda, deleteProfessionalAgenda, getUserProfileByOwner, listAgendaByProfessional, listAppointmentsByPro, listCaseDocumentsByCase, listCasesByProOwner, listMessagesByCase, listPaymentsByProOwner, listSurveyResponsesByOwnerAndPro, listSurveyResponsesByProOwner, updateAppointment, updateCase, updateProfessionalAgenda } from '../../lib/graphqlClient';
+import { createMessage, createPayment, createProfessionalAgenda, deleteAppointment, deleteCase, deleteProfessionalAgenda, getProfessionalProfileByOwner, getUserProfileByOwner, listAgendaByProfessional, listAppointmentsByPro, listCaseDocumentsByCase, listCasesByProOwner, listMessagesByCase, listPaymentsByProOwner, listSurveyResponsesByOwnerAndPro, listSurveyResponsesByProOwner, updateAppointment, updateCase, updateProfessionalAgenda } from '../../lib/graphqlClient';
 import { isAuthBypassed } from '../../lib/authBypass';
 
 const SURVEY_QUESTIONS: Array<{ id: string; label: string }> = [
@@ -40,6 +40,7 @@ export default function ExpertDashboard() {
   const [cases, setCases] = useState<any[]>([]);
   const [meetingLink, setMeetingLink] = useState('');
   const [proEmail, setProEmail] = useState('');
+  const [proDisplayName, setProDisplayName] = useState('');
   const [newDate, setNewDate] = useState('');
   const [newTime, setNewTime] = useState('');
   const [newEndTime, setNewEndTime] = useState('');
@@ -62,6 +63,7 @@ export default function ExpertDashboard() {
   const [callModalAppt, setCallModalAppt] = useState<any | null>(null);
   const [callFullscreen, setCallFullscreen] = useState(false);
   const callModalRef = useRef<HTMLDivElement | null>(null);
+  const [cancelledApptIds, setCancelledApptIds] = useState<string[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
   const [messagesByCase, setMessagesByCase] = useState<Record<string, any[]>>({});
   const [messagesLoading, setMessagesLoading] = useState<Record<string, boolean>>({});
@@ -81,12 +83,45 @@ export default function ExpertDashboard() {
     };
   }, [callModalAppt]);
 
+  const readCancelledApptIds = () => {
+    try {
+      const raw = localStorage.getItem('fiskal_cancelled_appts');
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  useEffect(() => {
+    const initial = readCancelledApptIds();
+    if (initial.length) setCancelledApptIds(initial);
+  }, []);
+
+  useEffect(() => {
+    if (!cancelledApptIds.length) return;
+    setAppointments(prev => prev.filter(a => !cancelledApptIds.includes(a.id)));
+    setCases(prev => prev.filter(c => !cancelledApptIds.includes(c?.appointmentId)));
+  }, [cancelledApptIds]);
+
+  const rememberCancelledAppt = (id: string) => {
+    setCancelledApptIds(prev => {
+      const next = prev.includes(id) ? prev : [...prev, id];
+      try {
+        localStorage.setItem('fiskal_cancelled_appts', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
   useEffect(() => {
     const load = async () => {
       try {
         if (isAuthBypassed()) {
           setProSub('demo-pro');
           setProEmail('demo@fiskal.local');
+          setProDisplayName('Profesional');
           return;
         }
         const user = await getCurrentUser();
@@ -94,6 +129,10 @@ export default function ExpertDashboard() {
         const sub = attr.sub ?? user.userId ?? '';
         setProSub(sub);
         setProEmail(attr.email ?? '');
+        try {
+          const proProfile = await getProfessionalProfileByOwner(sub);
+          setProDisplayName(proProfile?.displayName || 'Profesional');
+        } catch {}
       } catch {
         router.push('/');
       }
@@ -108,8 +147,9 @@ export default function ExpertDashboard() {
       setCases([]);
       return;
     }
+    const cancelledNow = readCancelledApptIds();
     const appts = await listAppointmentsByPro(sub);
-    const activeAppts = appts.filter((a: any) => a.status !== AppointmentStatus.CANCELLED);
+    const activeAppts = appts.filter((a: any) => a.status !== AppointmentStatus.CANCELLED && !cancelledNow.includes(a.id));
     setAppointments(dedupeAppointments(activeAppts));
     await hydrateClientNames(appts);
     const agenda = await listAgendaByProfessional(sub);
@@ -120,7 +160,8 @@ export default function ExpertDashboard() {
     });
     setSlots(sortedAgenda);
     const proCases = await listCasesByProOwner(sub);
-    setCases(proCases);
+    const filteredCases = proCases.filter((c: any) => !cancelledNow.includes(c?.appointmentId));
+    setCases(filteredCases);
     const proPayments = await listPaymentsByProOwner(sub);
     setPayments(proPayments || []);
     const priceMap: Record<string, string> = {};
@@ -135,18 +176,9 @@ export default function ExpertDashboard() {
   };
 
   const dedupeAppointments = (items: any[]) => {
-    const getSlotId = (notes?: string | null) => {
-      if (!notes) return null;
-      const match = notes.match(/slotId:([^\s]+)/);
-      return match ? match[1] : null;
-    };
     const byKey = new Map<string, any>();
     for (const appt of items) {
-      const slotId = getSlotId(appt?.notes);
-      const base = slotId
-        ? `slot:${slotId}`
-        : `time:${appt?.requestedStart || ''}|${appt?.requestedEnd || ''}`;
-      const key = `${base}|client:${appt?.clientOwner || ''}|pro:${appt?.proOwner || ''}`;
+      const key = getAppointmentKey(appt);
       const prev = byKey.get(key);
       if (!prev) {
         byKey.set(key, appt);
@@ -159,6 +191,19 @@ export default function ExpertDashboard() {
       }
     }
     return Array.from(byKey.values());
+  };
+
+  const getAppointmentKey = (appt: any) => {
+    const notes = appt?.notes;
+    let slotId: string | null = null;
+    if (notes) {
+      const match = notes.match(/slotId:([^\s]+)/);
+      slotId = match ? match[1] : null;
+    }
+    const base = slotId
+      ? `slot:${slotId}`
+      : `time:${appt?.requestedStart || ''}|${appt?.requestedEnd || ''}`;
+    return `${base}|client:${appt?.clientOwner || ''}|pro:${appt?.proOwner || ''}`;
   };
 
   const hydrateClientNames = async (appts: any[]) => {
@@ -672,26 +717,102 @@ export default function ExpertDashboard() {
   };
 
   const closeAppointment = async (appt: any) => {
-    if (!confirm('¿Cerrar esta solicitud de cita?')) return;
+    if (!confirm('¿Cancelar esta cita? El cliente recibirá un correo y podrá agendar nuevamente.')) return;
     try {
-      await updateAppointment({ id: appt.id, status: AppointmentStatus.CANCELLED });
+      const key = getAppointmentKey(appt);
+      const allAppts = await listAppointmentsByPro(proSub);
+      const relatedAppts = allAppts.filter((item: any) => getAppointmentKey(item) === key);
+      const relatedIds = relatedAppts.map((item: any) => item.id).filter(Boolean);
+
+      for (const item of relatedAppts) {
+        try {
+          await updateAppointment({ id: item.id, status: AppointmentStatus.CANCELLED });
+        } catch (err) {
+          console.warn('No se pudo cancelar cita:', err);
+        }
+        try {
+          await deleteAppointment({ id: item.id });
+        } catch (err) {
+          console.warn('No se pudo eliminar la cita:', err);
+        }
+      }
+
       const slotId = (appt.notes || '').split('slotId:')[1]?.trim();
-      const related = slots.find(s => s.id === slotId);
-      if (related) {
+      const relatedSlot = slots.find(s => s.id === slotId);
+      if (relatedSlot) {
         await updateProfessionalAgenda({
-          id: related.id,
+          id: relatedSlot.id,
           status: ProfessionalAgendaStatus.AVAILABLE,
           clientId: null,
           meetingLink: null,
         });
       }
-      alert('Solicitud cerrada.');
+
+      const caseForAppt = cases.find(c => relatedIds.includes(c.appointmentId));
+      if (caseForAppt?.id) {
+        try {
+          await deleteCase({ id: caseForAppt.id });
+        } catch (err) {
+          console.warn('No se pudo eliminar el caso:', err);
+        }
+      }
+
+      const clientOwner = relatedAppts.find((item: any) => item?.clientOwner)?.clientOwner || appt.clientOwner;
+      if (clientOwner) {
+        try {
+          const responses = await listSurveyResponsesByOwnerAndPro(clientOwner, proSub);
+          if (responses.length) {
+            for (const item of responses) {
+              if (item?.id) {
+                await updateSurveyResponse({ id: item.id, proOwner: null, professionalId: null });
+              }
+            }
+            setSurveyByClient(prev => ({ ...prev, [clientOwner]: null }));
+          }
+        } catch (err) {
+          console.warn('No se pudo desasignar encuesta:', err);
+        }
+      }
+
+      for (const id of relatedIds) {
+        rememberCancelledAppt(id);
+      }
+      setAppointments(prev => prev.filter(a => !relatedIds.includes(a.id)));
+      setCases(prev => prev.filter(c => !relatedIds.includes(c.appointmentId)));
+      let clientEmail = appt.clientEmail || '';
+      if (!clientEmail && appt.clientOwner) {
+        try {
+          const clientProfile = await getUserProfileByOwner(appt.clientOwner);
+          clientEmail = clientProfile?.email || '';
+        } catch {}
+      }
+      if (clientEmail) {
+        const start = appt.requestedStart ? new Date(appt.requestedStart) : null;
+        const date = start ? start.toLocaleDateString() : '';
+        const time = start ? start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+        const actionUrl = `${window.location.origin}/professionals`;
+        const res = await fetch('/api/send-cancel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            clientEmail,
+            professionalName: proDisplayName || 'Profesional',
+            date,
+            time,
+            actionUrl,
+          }),
+        });
+        if (!res.ok) {
+          const payload = await res.json().catch(() => ({}));
+          console.warn('No se pudo enviar correo de cancelación:', payload.error || 'error');
+        }
+      }
+      alert('Cita cancelada.');
       setRescheduleOpen(false);
       setRescheduleTarget(null);
       setRescheduleDate('');
       setRescheduleTime('');
       setRescheduleEndTime('');
-      refresh(proSub);
     } catch (err: any) {
       console.error('Error cerrando solicitud', err);
       alert('No se pudo cerrar: ' + (err?.message || 'error'));
@@ -792,6 +913,7 @@ export default function ExpertDashboard() {
             <div key={appt.id} style={{ background: '#003a57', padding: '16px', borderRadius: '10px', border: '1px solid #00e5ff', position: 'relative' }}>
               <button
                 onClick={() => closeAppointment(appt)}
+                title="Cancelar cita"
                 style={{ position: 'absolute', top: '10px', right: '10px', background: '#ff6b6b', border: 'none', padding: '4px 8px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '6px' }}
               >
                 X

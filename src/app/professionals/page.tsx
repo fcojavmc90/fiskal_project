@@ -73,14 +73,17 @@ export default function ProfessionalsPage() {
               const t = `${answersText}`.toLowerCase();
               let score = 0;
               if (t.includes('cp2000')) score += 2;
-              if (t.includes('deficiency')) score += 2;
-              if (t.includes('audit')) score += 1;
+              if (t.includes('deficiency') || t.includes('deficiencia')) score += 2;
+              if (t.includes('audit') || t.includes('auditor')) score += 1;
               if (t.includes('embargo')) score += 1;
+              if (t.includes('notice of deficiency') || t.includes('corte') || t.includes('90')) score += 1;
+              if (t.includes('sfr') || t.includes('declaración sustituta')) score += 1;
               if (bio && t && bio.toLowerCase().includes('irs')) score += 1;
               return score;
             };
-            scored = scored
-              .map(p => ({ ...p, _score: scoreFor(p.bio) } as any))
+            const withScores = scored.map(p => ({ ...p, _score: scoreFor(p.bio) } as any));
+            const maxScore = withScores.reduce((acc: number, p: any) => Math.max(acc, p._score ?? 0), 0);
+            scored = (maxScore > 0 ? withScores.filter((p: any) => (p._score ?? 0) > 0) : withScores)
               .sort((a: any, b: any) => (b._score ?? 0) - (a._score ?? 0));
           } catch (err: any) {
             console.error('No se pudo leer encuesta para ranking:', err);

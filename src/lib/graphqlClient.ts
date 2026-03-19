@@ -153,6 +153,12 @@ const updateAppointmentMutation = /* GraphQL */ `
   }
 `;
 
+const deleteAppointmentMutation = /* GraphQL */ `
+  mutation DeleteAppointment($input: DeleteAppointmentInput!) {
+    deleteAppointment(input: $input) { id }
+  }
+`;
+
 const createPaymentMutation = /* GraphQL */ `
   mutation CreatePayment($input: CreatePaymentInput!) {
     createPayment(input: $input) { id status type amountCents currency }
@@ -199,6 +205,12 @@ const createCaseMutation = /* GraphQL */ `
 const updateCaseMutation = /* GraphQL */ `
   mutation UpdateCase($input: UpdateCaseInput!) {
     updateCase(input: $input) { id status servicePriceCents currency }
+  }
+`;
+
+const deleteCaseMutation = /* GraphQL */ `
+  mutation DeleteCase($input: DeleteCaseInput!) {
+    deleteCase(input: $input) { id }
   }
 `;
 
@@ -372,6 +384,10 @@ export async function updateAppointment(input: {
   return getClient().graphql({ query: updateAppointmentMutation, variables: { input } });
 }
 
+export async function deleteAppointment(input: { id: string }) {
+  return getClient().graphql({ query: deleteAppointmentMutation, variables: { input } });
+}
+
 export async function listAgendaByProfessional(professionalId: string) {
   const res = await getClient().graphql({
     query: professionalAgendasByProfessionalIdQuery,
@@ -510,6 +526,10 @@ export async function updateCase(input: {
   currency?: string | null;
 }) {
   return getClient().graphql({ query: updateCaseMutation, variables: { input } });
+}
+
+export async function deleteCase(input: { id: string }) {
+  return getClient().graphql({ query: deleteCaseMutation, variables: { input } });
 }
 
 export async function createCaseDocument(input: {
