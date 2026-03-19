@@ -56,21 +56,28 @@ export default function RegisterPage() {
     'SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'
   ];
 
-  const handleSignUp = async (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (form.password !== form.confirm) return alert("Las contraseñas no coinciden");
+    const formEl = e.currentTarget;
+    const emailInput = formEl.querySelector('input[type="email"]') as HTMLInputElement | null;
+    const passwordInput = formEl.querySelector('input[type="password"]') as HTMLInputElement | null;
+    const email = (form.email || emailInput?.value || '').trim();
+    const password = (form.password || passwordInput?.value || '').trim();
+    if (!email) return alert("Debes ingresar un correo válido");
+    if (!password) return alert("Debes ingresar una contraseña");
+    if ((form.confirm || '').trim() !== password) return alert("Las contraseñas no coinciden");
 
     try {
       savePendingProfile({
         role: normalizeRole(form.role) ?? "CLIENT",
         firstName: form.firstName,
         lastName: form.lastName,
-        email: form.email,
+        email,
         description: form.description,
       });
 
       const fullAttributes = {
-        email: form.email,
+        email,
         given_name: form.firstName,
         family_name: form.lastName,
         phone_number: form.phone,
@@ -80,12 +87,12 @@ export default function RegisterPage() {
         "custom:description": form.description,
       };
 
-      const minimalAttributes = { email: form.email };
+      const minimalAttributes = { email };
 
       try {
         await signUp({
-          username: form.email,
-          password: form.password,
+          username: email,
+          password,
           options: { userAttributes: fullAttributes },
         });
       } catch (err: any) {
@@ -96,15 +103,15 @@ export default function RegisterPage() {
           msg.includes("custom:");
         if (!isAttrError) throw err;
         await signUp({
-          username: form.email,
-          password: form.password,
+          username: email,
+          password,
           options: { userAttributes: minimalAttributes },
         });
       }
 
-      localStorage.setItem('pendingEmail', form.email);
+      localStorage.setItem('pendingEmail', email);
       alert("Registro exitoso. Revisa tu correo para confirmar.");
-      router.push(`/confirm-email?email=${encodeURIComponent(form.email)}`);
+      router.push(`/confirm-email?email=${encodeURIComponent(email)}`);
     } catch (err: any) {
       alert("Error: " + err.message);
     }
