@@ -102,7 +102,7 @@ export default function ProfessionalsPage() {
       try {
         const session = await fetchAuthSession({ forceRefresh: true });
         await getCurrentUser();
-        return session?.tokens?.accessToken?.toString() ?? null;
+        return session?.tokens?.idToken?.toString() ?? null;
       } catch {
         if (attempt === retries - 1) return null;
         await new Promise(resolve => setTimeout(resolve, delayMs));
