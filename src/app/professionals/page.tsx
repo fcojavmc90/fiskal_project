@@ -55,7 +55,7 @@ export default function ProfessionalsPage() {
         }
         await waitForAuthReady();
         console.log('[professionals] loading profiles for owner:', owner);
-        const items = await listProfessionalProfiles();
+        const items = await retryListProfessionalProfiles();
         console.log('[professionals] listProfessionalProfiles result:', items);
         let scored = items as ProCard[];
         if (owner) {
@@ -96,6 +96,23 @@ export default function ProfessionalsPage() {
     };
     load();
   }, [owner]);
+
+  async function retryListProfessionalProfiles(retries = 3, delayMs = 500) {
+    let lastError: any = null;
+    for (let attempt = 0; attempt < retries; attempt += 1) {
+      try {
+        const result = await listProfessionalProfiles();
+        if (Array.isArray(result) && result.length > 0) return result;
+        // If empty, wait once for auth/session propagation and retry.
+        lastError = null;
+      } catch (err) {
+        lastError = err;
+      }
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+    if (lastError) throw lastError;
+    return [];
+  }
 
   async function waitForAuthReady(retries = 3, delayMs = 400) {
     for (let attempt = 0; attempt < retries; attempt += 1) {
