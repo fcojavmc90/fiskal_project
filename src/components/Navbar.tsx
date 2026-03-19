@@ -69,6 +69,21 @@ export default function Navbar() {
   };
 
   const dashboardHref = user?.role === "PRO" ? "/expert-dashboard" : "/dashboard-client";
+  const ensureSurveyCookie = () => {
+    if (typeof window === "undefined") return;
+    try {
+      const surveyDone = localStorage.getItem("fiskal_survey_completed") === "true";
+      document.cookie = `fk_has_survey=${surveyDone ? "1" : "0"}; path=/`;
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleProfessionalsClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    ensureSurveyCookie();
+    router.push("/professionals/recommended");
+  };
 
   return (
     <nav className="fk-nav">
@@ -79,7 +94,11 @@ export default function Navbar() {
             <>
               <Link href={dashboardHref}>Dashboard</Link>
               {user.role === "CLIENT" && <Link href="/survey">Encuesta</Link>}
-              {user.role === "CLIENT" && <Link href="/professionals">Profesionales</Link>}
+              {user.role === "CLIENT" && (
+                <Link href="/professionals/recommended" onClick={handleProfessionalsClick}>
+                  Profesionales
+                </Link>
+              )}
               <span className="fk-user">{user.name}</span>
               <button className="fk-logout" onClick={handleLogout}>Salir</button>
             </>
