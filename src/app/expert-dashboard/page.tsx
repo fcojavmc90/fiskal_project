@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import ChimeCall from '../../components/ChimeCall';
 import Sidebar from '../../components/Sidebar';
 import { AppointmentStatus, CaseStatus, PaymentStatus, PaymentType, ProfessionalAgendaStatus } from '../../API';
-import { createMessage, createPayment, createProfessionalAgenda, deleteAppointment, deleteCase, deleteProfessionalAgenda, getProfessionalProfileByOwner, getUserProfileByOwner, listAgendaByProfessional, listAppointmentsByPro, listCaseDocumentsByCase, listCasesByProOwner, listMessagesByCase, listPaymentsByProOwner, listSurveyResponsesByOwnerAndPro, listSurveyResponsesByProOwner, updateAppointment, updateCase, updateProfessionalAgenda } from '../../lib/graphqlClient';
+import { createMessage, createPayment, createProfessionalAgenda, deleteAppointment, deleteCase, deleteProfessionalAgenda, getProfessionalProfileByOwner, getUserProfileByOwner, listAgendaByProfessional, listAppointmentsByPro, listCaseDocumentsByCase, listCasesByProOwner, listMessagesByCase, listPaymentsByProOwner, listSurveyResponsesByOwnerAndPro, listSurveyResponsesByProOwner, updateAppointment, updateCase, updateProfessionalAgenda, updateSurveyResponse } from '../../lib/graphqlClient';
 import { isAuthBypassed } from '../../lib/authBypass';
 
 const SURVEY_QUESTIONS: Array<{ id: string; label: string }> = [
