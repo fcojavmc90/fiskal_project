@@ -26,6 +26,7 @@ export default function ClientBookingPageClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [blocked, setBlocked] = useState(false);
+  const [pendingSlots, setPendingSlots] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const loadAuth = async () => {
@@ -98,6 +99,8 @@ export default function ClientBookingPageClient() {
       return;
     }
     if (!clientSub || !proSub) return;
+    if (pendingSlots[slot.id]) return;
+    setPendingSlots(prev => ({ ...prev, [slot.id]: true }));
     try {
       const start = `${slot.date}T${slot.time}:00Z`;
       const endTime = slot.endTime || slot.time;
@@ -156,10 +159,12 @@ export default function ClientBookingPageClient() {
         }
       }
       alert("Cita solicitada. El profesional confirmará por correo.");
+      setSlots(prev => prev.filter(s => s.id !== slot.id));
       router.push("/dashboard-client");
     } catch (err: any) {
       console.error("Error reservando cita", err);
       alert("Error al reservar: " + formatError(err));
+      setPendingSlots(prev => ({ ...prev, [slot.id]: false }));
     }
   };
 
@@ -204,16 +209,17 @@ export default function ClientBookingPageClient() {
                 </div>
                 <button
                   onClick={() => reserve(slot)}
+                  disabled={pendingSlots[slot.id]}
                   style={{
-                    background: "#00ff88",
+                    background: pendingSlots[slot.id] ? "#7fbfdd" : "#00ff88",
                     border: "none",
                     padding: "8px 12px",
                     fontWeight: "bold",
-                    cursor: "pointer",
+                    cursor: pendingSlots[slot.id] ? "default" : "pointer",
                     borderRadius: "6px",
                   }}
                 >
-                  Reservar
+                  {pendingSlots[slot.id] ? "Reservando..." : "Reservar"}
                 </button>
               </div>
             ))}

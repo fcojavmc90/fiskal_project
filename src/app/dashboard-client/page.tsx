@@ -35,6 +35,16 @@ export default function ClientDashboard() {
   const [showStatusPanel, setShowStatusPanel] = useState(true);
   const [showCasesPanel, setShowCasesPanel] = useState(true);
 
+  const dedupeByKey = (items: any[], keyFn: (item: any) => string | null) => {
+    const map = new Map<string, any>();
+    for (const item of items || []) {
+      const key = keyFn(item);
+      if (!key) continue;
+      if (!map.has(key)) map.set(key, item);
+    }
+    return Array.from(map.values());
+  };
+
   useEffect(() => {
     if (!callModalAppt) return;
     const handler = () => {
@@ -69,10 +79,23 @@ export default function ClientDashboard() {
         setClientDisplayName(rawName);
         try {
           const items = await listAppointmentsByClient(sub);
-          const active = items.filter((a: any) => a.status !== AppointmentStatus.CANCELLED);
+          const uniqueAppointments = dedupeByKey(items, (a: any) => {
+            if (a?.id) return a.id;
+            const key = [a?.clientOwner, a?.proOwner, a?.professionalId, a?.requestedStart, a?.requestedEnd, a?.status]
+              .filter(Boolean)
+              .join('|');
+            return key || null;
+          });
+          const active = uniqueAppointments.filter((a: any) => a.status !== AppointmentStatus.CANCELLED);
           setAppointments(active);
           const caseItems = await listCasesByClientOwner(sub);
-          setCases(caseItems);
+          setCases(dedupeByKey(caseItems, (c: any) => {
+            if (c?.id) return c.id;
+            const key = [c?.caseNumber, c?.appointmentId, c?.professionalId, c?.clientOwner]
+              .filter(Boolean)
+              .join('|');
+            return key || null;
+          }));
           const pros = await listProfessionalProfiles();
           const map: Record<string, string> = {};
           for (const p of pros) {

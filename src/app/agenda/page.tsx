@@ -15,6 +15,7 @@ export default function AgendaPage() {
   const [clientName, setClientName] = useState('');
   const [loading, setLoading] = useState(true);
   const [blocked, setBlocked] = useState(false);
+  const [pendingSlots, setPendingSlots] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const stored = localStorage.getItem('fiskal_selected_pro');
@@ -86,6 +87,8 @@ export default function AgendaPage() {
       return;
     }
     if (!clientSub || !pro?.owner) return;
+    if (pendingSlots[slot.id]) return;
+    setPendingSlots(prev => ({ ...prev, [slot.id]: true }));
     try {
       const start = `${slot.date}T${slot.time}:00Z`;
       const endTime = slot.endTime || slot.time;
@@ -161,10 +164,12 @@ export default function AgendaPage() {
         }
       }
       alert('Cita solicitada. El profesional confirmará por correo.');
+      setSlots(prev => prev.filter(s => s.id !== slot.id));
       router.push('/dashboard-client');
     } catch (err: any) {
       console.error('Error reservando cita', err);
       alert('Error al reservar: ' + formatError(err));
+      setPendingSlots(prev => ({ ...prev, [slot.id]: false }));
     }
   };
 
@@ -187,7 +192,20 @@ export default function AgendaPage() {
                 <div>
                   <strong>{slot.date}</strong> - {slot.time} a {slot.endTime || slot.time}
                 </div>
-                <button onClick={() => reserve(slot)} style={{ background: '#00ff88', border: 'none', padding: '8px 12px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '6px' }}>Reservar</button>
+                <button
+                  onClick={() => reserve(slot)}
+                  disabled={pendingSlots[slot.id]}
+                  style={{
+                    background: pendingSlots[slot.id] ? '#7fbfdd' : '#00ff88',
+                    border: 'none',
+                    padding: '8px 12px',
+                    fontWeight: 'bold',
+                    cursor: pendingSlots[slot.id] ? 'default' : 'pointer',
+                    borderRadius: '6px'
+                  }}
+                >
+                  {pendingSlots[slot.id] ? 'Reservando...' : 'Reservar'}
+                </button>
               </div>
             ))}
           </div>
