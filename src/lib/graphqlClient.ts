@@ -295,14 +295,22 @@ export async function updateProfessionalProfile(input: {
   return getClient().graphql({ query: updateProfessionalProfileMutation, variables: { input } });
 }
 
-export async function createSurveyResponse(input: { owner: string; answersJson: string }) {
-  return getClient().graphql({ query: createSurveyResponseMutation, variables: { input } });
+export async function createSurveyResponse(
+  input: { owner: string; answersJson: string },
+  authToken?: string
+) {
+  return getClient().graphql({
+    query: createSurveyResponseMutation,
+    variables: { input },
+    ...(authToken ? { authMode: "userPool", authToken } : {}),
+  });
 }
 
-export async function listSurveyResponsesByOwner(owner: string) {
+export async function listSurveyResponsesByOwner(owner: string, authToken?: string) {
   const res = await getClient().graphql({
     query: listSurveyResponsesQuery,
     variables: { filter: { owner: { eq: owner } } },
+    ...(authToken ? { authMode: "userPool", authToken } : {}),
   });
   return res.data?.listSurveyResponses?.items ?? [];
 }

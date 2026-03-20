@@ -60,7 +60,7 @@ export default function ProfessionalsPage() {
         let scored = items as ProCard[];
         if (owner) {
           try {
-            const surveys = await listSurveyResponsesByOwner(owner);
+            const surveys = await listSurveyResponsesByOwner(owner, token ?? undefined);
             console.log('[professionals] listSurveyResponsesByOwner result:', surveys);
             const latest = surveys.sort((a: any, b: any) => (a.createdAt || '').localeCompare(b.createdAt || '')).pop();
             const payload = parseSurveyAnswers(latest?.answersJson);

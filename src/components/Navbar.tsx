@@ -79,10 +79,8 @@ export default function Navbar() {
     }
   };
 
-  const handleProfessionalsClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault();
+  const handleProfessionalsClick = () => {
     ensureSurveyCookie();
-    router.push("/professionals/recommended");
   };
 
   return (

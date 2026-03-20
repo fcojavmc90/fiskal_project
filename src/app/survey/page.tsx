@@ -17,6 +17,10 @@ export default function SurveyPage() {
   const [sub, setSub] = useState<string>('');
   const [identityId, setIdentityId] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const setSurveyCookies = () => {
+    document.cookie = 'fk_has_survey=1; path=/; SameSite=Lax';
+    document.cookie = 'fk_role=client; path=/; SameSite=Lax';
+  };
 
   const questions = useMemo(() => ([
     { id: 'q1', label: '¿Cuál es el número de la carta o aviso? (Ej: CP2000, CP14, Letter 3219, LTR 504)', type: 'text' },
@@ -86,7 +90,7 @@ export default function SurveyPage() {
         const payload = { answers, files: [], submittedAt: new Date().toISOString() };
         localStorage.setItem('fiskal_survey_completed', 'true');
         localStorage.setItem('fiskal_survey_data', JSON.stringify(payload));
-        document.cookie = 'fk_has_survey=1; path=/';
+        setSurveyCookies();
         router.push('/professionals/recommended');
         return;
       }
@@ -113,7 +117,12 @@ export default function SurveyPage() {
       }
       const payload = { answers, files: uploadedKeys, submittedAt: new Date().toISOString() };
       try {
-        const res: any = await createSurveyResponse({ owner: sub, answersJson: JSON.stringify(payload) });
+        const session = await fetchAuthSession({ forceRefresh: true });
+        const idToken = session?.tokens?.idToken?.toString() ?? undefined;
+        const res: any = await createSurveyResponse(
+          { owner: sub, answersJson: JSON.stringify(payload) },
+          idToken
+        );
         const created = res?.data?.createSurveyResponse;
         if (created?.id) {
           localStorage.setItem('fiskal_survey_last_id', created.id);
@@ -126,7 +135,7 @@ export default function SurveyPage() {
       }
       localStorage.setItem('fiskal_survey_completed', 'true');
       localStorage.setItem('fiskal_survey_data', JSON.stringify(payload));
-      document.cookie = 'fk_has_survey=1; path=/';
+      setSurveyCookies();
       router.push('/professionals/recommended');
     } catch (err: any) {
       console.error('Survey submit error', err);
