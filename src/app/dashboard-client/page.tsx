@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { getCurrentUser, fetchUserAttributes } from 'aws-amplify/auth';
+import { getCurrentUser, fetchAuthSession, fetchUserAttributes } from 'aws-amplify/auth';
 import { createMessage, getUserProfileByOwner, listAgendaByProfessional, listAppointmentsByClient, listCasesByClientOwner, listMessagesByCase, listPaymentsByClientOwner, listProfessionalProfiles, listSurveyResponsesByOwner, updateAppointment, updateProfessionalAgenda, updateProfessionalProfile, updateSurveyResponse } from '../../lib/graphqlClient';
 import { AppointmentStatus, PaymentStatus, PaymentType, ProfessionalAgendaStatus } from '../../API';
 import { useRouter } from 'next/navigation';
@@ -45,6 +45,11 @@ export default function ClientDashboard() {
     return Array.from(map.values());
   };
 
+  const setClientSurveyCookies = (hasSurvey: boolean) => {
+    document.cookie = `fk_has_survey=${hasSurvey ? '1' : '0'}; path=/; SameSite=Lax`;
+    document.cookie = 'fk_role=client; path=/; SameSite=Lax';
+  };
+
   useEffect(() => {
     if (!callModalAppt) return;
     const handler = () => {
@@ -72,12 +77,17 @@ export default function ClientDashboard() {
         const user = await getCurrentUser();
         const attr = await fetchUserAttributes();
         const sub = attr.sub ?? user.userId ?? '';
+        const session = await fetchAuthSession({ forceRefresh: true });
+        const idToken = session?.tokens?.idToken?.toString() ?? undefined;
         const profile = await getUserProfileByOwner(sub);
         const first = profile?.firstName ?? '';
         const last = profile?.lastName ?? '';
         const rawName = (first || last) ? `${first} ${last}`.trim() : (profile?.email ?? attr.email ?? 'Cliente');
         setClientDisplayName(rawName);
         try {
+          const surveys = await listSurveyResponsesByOwner(sub, idToken);
+          const localSurveyDone = localStorage.getItem('fiskal_survey_completed') === 'true';
+          setClientSurveyCookies(localSurveyDone || surveys.length > 0);
           const items = await listAppointmentsByClient(sub);
           const uniqueAppointments = dedupeByKey(items, (a: any) => {
             if (a?.id) return a.id;
@@ -97,7 +107,7 @@ export default function ClientDashboard() {
               .join('|');
             return key || null;
           }));
-          const pros = await listProfessionalProfiles();
+          const pros = await listProfessionalProfiles(idToken);
           const map: Record<string, string> = {};
           for (const p of pros) {
             if (p?.owner) map[p.owner] = p.displayName || p.owner;
@@ -107,7 +117,7 @@ export default function ClientDashboard() {
           const paymentItems = await listPaymentsByClientOwner(sub);
           setPayments(paymentItems || []);
           setPaymentsLoading(false);
-          await backfillSurveyAssignments(sub, active);
+          await backfillSurveyAssignments(sub, active, surveys, idToken);
         } catch (err) {
           console.warn('Dashboard data load failed:', err);
         }
@@ -123,10 +133,15 @@ export default function ClientDashboard() {
     load();
   }, [router]);
 
-  const backfillSurveyAssignments = async (owner: string, appts: any[]) => {
+  const backfillSurveyAssignments = async (
+    owner: string,
+    appts: any[],
+    surveysOverride?: any[],
+    authToken?: string
+  ) => {
     try {
       if (!owner || !appts.length) return;
-      const surveys = await listSurveyResponsesByOwner(owner);
+      const surveys = surveysOverride ?? (await listSurveyResponsesByOwner(owner, authToken));
       if (!surveys.length) return;
       const sortedSurveys = [...surveys].sort((a: any, b: any) => (a.createdAt || '').localeCompare(b.createdAt || ''));
       const pending = appts
@@ -171,9 +186,13 @@ export default function ClientDashboard() {
         setSurveyError('No se pudo identificar al cliente.');
         return;
       }
-      const surveys = await listSurveyResponsesByOwner(sub);
+      const session = await fetchAuthSession({ forceRefresh: true });
+      const idToken = session?.tokens?.idToken?.toString() ?? undefined;
+      const surveys = await listSurveyResponsesByOwner(sub, idToken);
       const sorted = [...surveys].sort((a: any, b: any) => (a.createdAt || '').localeCompare(b.createdAt || ''));
       const latest = sorted.pop() ?? null;
+      const localSurveyDone = localStorage.getItem('fiskal_survey_completed') === 'true';
+      setClientSurveyCookies(localSurveyDone || surveys.length > 0);
       setSurveyInfo({
         count: surveys.length,
         latest: latest
