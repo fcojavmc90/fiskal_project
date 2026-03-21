@@ -27,40 +27,27 @@ export default function ProfessionalsPage() {
   const [pros, setPros] = useState<ProCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [owner, setOwner] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    const loadOwner = async () => {
-      try {
-        if (isAuthBypassed()) {
-          setOwner('demo-user');
-          return;
-        }
-        await waitForAuthReady();
-        const user = await getCurrentUser();
-        const attr = await fetchUserAttributes();
-        setOwner(attr.sub ?? user.userId ?? '');
-      } catch {
-        setOwner('');
-      }
-    };
-    loadOwner();
-  }, []);
-
-  useEffect(() => {
+    let mounted = true;
     const load = async () => {
       try {
         if (isAuthBypassed()) {
           setPros([]);
           return;
         }
-        const token = await waitForAuthReady();
-        console.log('[professionals] loading profiles for owner:', owner);
+        setError('');
+        const { token, owner: resolvedOwner } = await waitForAuthReady();
+        if (!mounted) return;
+        setOwner(resolvedOwner);
+        console.log('[professionals] loading profiles for owner:', resolvedOwner);
         const items = await retryListProfessionalProfiles(token);
         console.log('[professionals] listProfessionalProfiles result:', items);
         let scored = items as ProCard[];
-        if (owner) {
+        if (resolvedOwner) {
           try {
-            const surveys = await listSurveyResponsesByOwner(owner, token ?? undefined);
+            const surveys = await listSurveyResponsesByOwner(resolvedOwner, token ?? undefined);
             console.log('[professionals] listSurveyResponsesByOwner result:', surveys);
             const latest = surveys.sort((a: any, b: any) => (a.createdAt || '').localeCompare(b.createdAt || '')).pop();
             const payload = parseSurveyAnswers(latest?.answersJson);
@@ -89,26 +76,33 @@ export default function ProfessionalsPage() {
         const active = scored.filter(p => p.isActive !== false);
         setPros(active);
       } catch (err: any) {
-        alert('Error cargando profesionales: ' + err.message);
+        const msg = err?.message || 'No se pudo cargar la lista de profesionales.';
+        setError(msg);
+        alert('Error cargando profesionales: ' + msg);
       } finally {
         setLoading(false);
       }
     };
     load();
-  }, [owner]);
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
-  async function waitForAuthReady(retries = 3, delayMs = 400): Promise<string | null> {
+  async function waitForAuthReady(retries = 6, delayMs = 400): Promise<{ token: string | null; owner: string }> {
     for (let attempt = 0; attempt < retries; attempt += 1) {
       try {
         const session = await fetchAuthSession({ forceRefresh: true });
-        await getCurrentUser();
-        return session?.tokens?.idToken?.toString() ?? null;
+        const user = await getCurrentUser();
+        const attr = await fetchUserAttributes();
+        const resolvedOwner = attr.sub ?? user.userId ?? '';
+        return { token: session?.tokens?.idToken?.toString() ?? null, owner: resolvedOwner };
       } catch {
-        if (attempt === retries - 1) return null;
+        if (attempt === retries - 1) return { token: null, owner: '' };
         await new Promise(resolve => setTimeout(resolve, delayMs));
       }
     }
-    return null;
+    return { token: null, owner: '' };
   }
 
   async function retryListProfessionalProfiles(token: string | null, retries = 3, delayMs = 500) {
@@ -136,6 +130,11 @@ export default function ProfessionalsPage() {
     <div style={{ background: '#001a2c', minHeight: '100vh', padding: '40px', color: 'white' }}>
       <h1 style={{ textAlign: 'center', color: '#00e5ff' }}>Profesionales Recomendados</h1>
       {loading && <p style={{ textAlign: 'center' }}>Cargando...</p>}
+      {!loading && error && (
+        <p style={{ textAlign: 'center', color: '#ffb3b3' }}>
+          {error}
+        </p>
+      )}
       {!loading && pros.length === 0 && (
         <p style={{ textAlign: 'center' }}>No hay profesionales activos disponibles todavía.</p>
       )}

@@ -248,7 +248,8 @@ export async function getUserProfileByOwner(owner: string) {
 export async function listProfessionalProfiles(authToken?: string) {
   const res = await getClient().graphql({
     query: listProfessionalProfilesQuery,
-    ...(authToken ? { authMode: "userPool", authToken } : {}),
+    authMode: "userPool",
+    ...(authToken ? { authToken } : {}),
   });
   return res.data?.listProfessionalProfiles?.items ?? [];
 }
