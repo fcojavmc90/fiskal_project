@@ -677,14 +677,7 @@ export default function ExpertDashboard() {
     const total = caseForAppt?.servicePriceCents ?? 0;
     if (!total) return alert('Define el precio del servicio primero.');
     const half = Math.round(total / 2);
-    const res = await fetch('/api/square/checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amountCents: half, note: type === PaymentType.SERVICE_50_FIRST ? 'Pago 50% inicial' : 'Pago 50% final' })
-    });
-    const data = await res.json();
-    if (!res.ok) return alert(data.error || 'Error creando link');
-    await createPayment({
+    const createRes: any = await createPayment({
       clientOwner: appt.clientOwner,
       proOwner: proSub,
       professionalId: appt.professionalId,
@@ -694,8 +687,9 @@ export default function ExpertDashboard() {
       amountCents: half,
       currency: 'USD',
       status: PaymentStatus.PENDING,
-      squareCheckoutId: data.id,
     });
+    const paymentId = createRes?.data?.createPayment?.id || '';
+    if (!paymentId) return alert('Error creando pago');
     let clientEmail = appt.clientEmail || '';
     if (!clientEmail) {
       try {
@@ -704,10 +698,11 @@ export default function ExpertDashboard() {
       } catch {}
     }
     if (clientEmail || proEmail) {
+      const payLink = `${window.location.origin}/pay?payment=${encodeURIComponent(paymentId)}`;
       const res = await fetch('/api/send-meeting', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clientEmail, professionalEmail: proEmail, meetingLink: data.url, date: '', time: '' })
+        body: JSON.stringify({ clientEmail, professionalEmail: proEmail, meetingLink: payLink, date: '', time: '' })
       });
       if (!res.ok) {
         const payload = await res.json().catch(() => ({}));

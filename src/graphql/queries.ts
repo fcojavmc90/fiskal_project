@@ -322,8 +322,8 @@ export const getPayment = /* GraphQL */ `query GetPayment($id: ID!) {
     amountCents
     currency
     status
-    squareCheckoutId
-    squarePaymentId
+    paypalOrderId
+    paypalCaptureId
     createdAt
     updatedAt
     __typename
@@ -350,8 +350,8 @@ export const listPayments = /* GraphQL */ `query ListPayments(
       amountCents
       currency
       status
-      squareCheckoutId
-      squarePaymentId
+      paypalOrderId
+      paypalCaptureId
       createdAt
       updatedAt
       __typename

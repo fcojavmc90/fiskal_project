@@ -7,7 +7,7 @@ import { getPaymentById, updatePayment } from '../../lib/graphqlClient';
 import { PaymentStatus, PaymentType } from '../../API';
 import { ensureAmplifyConfigured } from '../../lib/amplifyClient';
 
-const SquarePayment = dynamic(() => import('../../components/SquarePayment'), { ssr: false });
+const PayPalPayment = dynamic(() => import('../../components/PayPalPayment'), { ssr: false });
 
 function PayPageInner() {
   ensureAmplifyConfigured();
@@ -41,9 +41,9 @@ function PayPageInner() {
     load();
   }, [paymentId]);
 
-  const onSuccess = async (squarePaymentId: string) => {
+  const onSuccess = async (captureId: string, orderId?: string) => {
     if (!payment?.id) return;
-    await updatePayment({ id: payment.id, status: PaymentStatus.PAID, squarePaymentId });
+    await updatePayment({ id: payment.id, status: PaymentStatus.PAID, paypalCaptureId: captureId, paypalOrderId: orderId || undefined });
     alert('Pago realizado con éxito.');
     router.push('/dashboard-client');
   };
@@ -64,7 +64,7 @@ function PayPageInner() {
             {payment.status === PaymentStatus.PAID ? (
               <p style={{ color: '#4ade80' }}>Este pago ya fue realizado.</p>
             ) : (
-              <SquarePayment
+              <PayPalPayment
                 amountCents={payment.amountCents}
                 description={label}
                 onSuccess={onSuccess}

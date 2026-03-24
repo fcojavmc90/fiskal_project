@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamicImport from 'next/dynamic';
 
-const SquarePayment = dynamicImport(() => import('../../components/SquarePayment'), { ssr: false });
+const PayPalPayment = dynamicImport(() => import('../../components/PayPalPayment'), { ssr: false });
 import { createPayment, listSurveyResponsesByOwner, updateSurveyResponse } from '../../lib/graphqlClient';
 import { PaymentStatus, PaymentType } from '../../API';
 import { getCurrentUser, fetchUserAttributes } from 'aws-amplify/auth';
@@ -34,7 +34,7 @@ export default function CheckoutPage() {
     load();
   }, [router]);
 
-  const onSuccess = async (paymentId: string) => {
+  const onSuccess = async (captureId: string, orderId?: string) => {
     if (isAuthBypassed()) {
       localStorage.setItem('fiskal_paid_initial', 'true');
       document.cookie = 'fk_paid_initial=1; path=/';
@@ -51,7 +51,8 @@ export default function CheckoutPage() {
       amountCents: 15000,
       currency: 'USD',
       status: PaymentStatus.PAID,
-      squarePaymentId: paymentId,
+      paypalCaptureId: captureId,
+      paypalOrderId: orderId || undefined,
     });
     if (proOwner) {
       try {
@@ -73,7 +74,7 @@ export default function CheckoutPage() {
         <h1 style={{ color: '#00e5ff' }}>Pago de Desbloqueo de Agenda</h1>
         <p>Seleccionaste a: <strong>{pro?.displayName ?? 'Profesional'}</strong></p>
         <p>Monto: <strong>USD 150</strong></p>
-        <SquarePayment amountCents={15000} description="Pago inicial para abrir agenda" onSuccess={onSuccess} />
+        <PayPalPayment amountCents={15000} description="Pago inicial para abrir agenda" onSuccess={onSuccess} />
       </div>
     </div>
   );

@@ -55,7 +55,7 @@ function isPublicPath(pathname: string) {
     pathname.startsWith("/api/health") ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/api/webhooks") ||
-    pathname.startsWith("/api/square") ||
+    pathname.startsWith("/api/paypal") ||
     pathname.startsWith("/api/send-meeting") ||
     pathname.startsWith("/api/google")
   ) {

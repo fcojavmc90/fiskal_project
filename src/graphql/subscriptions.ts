@@ -514,8 +514,8 @@ export const onCreatePayment = /* GraphQL */ `subscription OnCreatePayment(
     amountCents
     currency
     status
-    squareCheckoutId
-    squarePaymentId
+    paypalOrderId
+    paypalCaptureId
     createdAt
     updatedAt
     __typename
@@ -545,8 +545,8 @@ export const onUpdatePayment = /* GraphQL */ `subscription OnUpdatePayment(
     amountCents
     currency
     status
-    squareCheckoutId
-    squarePaymentId
+    paypalOrderId
+    paypalCaptureId
     createdAt
     updatedAt
     __typename
@@ -576,8 +576,8 @@ export const onDeletePayment = /* GraphQL */ `subscription OnDeletePayment(
     amountCents
     currency
     status
-    squareCheckoutId
-    squarePaymentId
+    paypalOrderId
+    paypalCaptureId
     createdAt
     updatedAt
     __typename

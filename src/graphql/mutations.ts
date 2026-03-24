@@ -461,8 +461,8 @@ export const createPayment = /* GraphQL */ `mutation CreatePayment(
     amountCents
     currency
     status
-    squareCheckoutId
-    squarePaymentId
+    paypalOrderId
+    paypalCaptureId
     createdAt
     updatedAt
     __typename
@@ -487,8 +487,8 @@ export const updatePayment = /* GraphQL */ `mutation UpdatePayment(
     amountCents
     currency
     status
-    squareCheckoutId
-    squarePaymentId
+    paypalOrderId
+    paypalCaptureId
     createdAt
     updatedAt
     __typename
@@ -513,8 +513,8 @@ export const deletePayment = /* GraphQL */ `mutation DeletePayment(
     amountCents
     currency
     status
-    squareCheckoutId
-    squarePaymentId
+    paypalOrderId
+    paypalCaptureId
     createdAt
     updatedAt
     __typename

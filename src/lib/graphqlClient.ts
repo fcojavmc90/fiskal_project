@@ -82,7 +82,7 @@ const listCasesQuery = /* GraphQL */ `
 const listPaymentsQuery = /* GraphQL */ `
   query ListPayments($filter: ModelPaymentFilterInput) {
     listPayments(filter: $filter) {
-      items { id clientOwner proOwner professionalId appointmentId caseId type amountCents currency status squareCheckoutId squarePaymentId }
+      items { id clientOwner proOwner professionalId appointmentId caseId type amountCents currency status paypalOrderId paypalCaptureId }
     }
   }
 `;
@@ -172,7 +172,7 @@ const createPaymentMutation = /* GraphQL */ `
 
 const updatePaymentMutation = /* GraphQL */ `
   mutation UpdatePayment($input: UpdatePaymentInput!) {
-    updatePayment(input: $input) { id status squarePaymentId }
+    updatePayment(input: $input) { id status paypalCaptureId }
   }
 `;
 
@@ -189,8 +189,8 @@ const getPaymentQuery = /* GraphQL */ `
       amountCents
       currency
       status
-      squareCheckoutId
-      squarePaymentId
+      paypalOrderId
+      paypalCaptureId
     }
   }
 `;
@@ -449,8 +449,8 @@ export async function createPayment(input: {
   amountCents: number;
   currency: string;
   status: PaymentStatus;
-  squareCheckoutId?: string | null;
-  squarePaymentId?: string | null;
+  paypalOrderId?: string | null;
+  paypalCaptureId?: string | null;
 }) {
   return getClient().graphql({ query: createPaymentMutation, variables: { input } });
 }
@@ -471,10 +471,10 @@ export async function listCasesByClientOwner(clientOwner: string) {
   return res.data?.listCases?.items ?? [];
 }
 
-export async function listPaymentsBySquareId(id: string) {
+export async function listPaymentsByPayPalId(id: string) {
   const res = await getClient().graphql({
     query: listPaymentsQuery,
-    variables: { filter: { or: [{ squarePaymentId: { eq: id } }, { squareCheckoutId: { eq: id } }] } },
+    variables: { filter: { or: [{ paypalCaptureId: { eq: id } }, { paypalOrderId: { eq: id } }] } },
   });
   return res.data?.listPayments?.items ?? [];
 }
@@ -569,7 +569,7 @@ export async function createCaseDocument(input: {
 export async function updatePayment(input: {
   id: string;
   status?: PaymentStatus | null;
-  squarePaymentId?: string | null;
+  paypalCaptureId?: string | null;
 }) {
   return getClient().graphql({ query: updatePaymentMutation, variables: { input } });
 }

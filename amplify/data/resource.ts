@@ -11,7 +11,7 @@ const schema = a.schema({
     date: a.string(),
     time: a.string(),
     status: a.string(), // PENDING, PAID, ACCEPTED, REJECTED
-    paymentId: a.string(), // ID de Square para los 150 USD
+    paymentId: a.string(), // ID del pago (PayPal) para los 150 USD
     notes: a.string(),
   }).authorization(allow => [allow.owner(), allow.specificGroup('PRO').to(['read', 'update'])]),
 

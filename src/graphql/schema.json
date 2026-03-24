@@ -4112,7 +4112,7 @@
           "isDeprecated" : false,
           "deprecationReason" : null
         }, {
-          "name" : "squareCheckoutId",
+          "name" : "paypalOrderId",
           "description" : null,
           "args" : [ ],
           "type" : {
@@ -4123,7 +4123,7 @@
           "isDeprecated" : false,
           "deprecationReason" : null
         }, {
-          "name" : "squarePaymentId",
+          "name" : "paypalCaptureId",
           "description" : null,
           "args" : [ ],
           "type" : {
@@ -4356,7 +4356,7 @@
           },
           "defaultValue" : null
         }, {
-          "name" : "squareCheckoutId",
+          "name" : "paypalOrderId",
           "description" : null,
           "type" : {
             "kind" : "INPUT_OBJECT",
@@ -4365,7 +4365,7 @@
           },
           "defaultValue" : null
         }, {
-          "name" : "squarePaymentId",
+          "name" : "paypalCaptureId",
           "description" : null,
           "type" : {
             "kind" : "INPUT_OBJECT",
@@ -8729,7 +8729,7 @@
           },
           "defaultValue" : null
         }, {
-          "name" : "squareCheckoutId",
+          "name" : "paypalOrderId",
           "description" : null,
           "type" : {
             "kind" : "SCALAR",
@@ -8738,7 +8738,7 @@
           },
           "defaultValue" : null
         }, {
-          "name" : "squarePaymentId",
+          "name" : "paypalCaptureId",
           "description" : null,
           "type" : {
             "kind" : "SCALAR",
@@ -8837,7 +8837,7 @@
           },
           "defaultValue" : null
         }, {
-          "name" : "squareCheckoutId",
+          "name" : "paypalOrderId",
           "description" : null,
           "type" : {
             "kind" : "INPUT_OBJECT",
@@ -8846,7 +8846,7 @@
           },
           "defaultValue" : null
         }, {
-          "name" : "squarePaymentId",
+          "name" : "paypalCaptureId",
           "description" : null,
           "type" : {
             "kind" : "INPUT_OBJECT",
@@ -9011,7 +9011,7 @@
           },
           "defaultValue" : null
         }, {
-          "name" : "squareCheckoutId",
+          "name" : "paypalOrderId",
           "description" : null,
           "type" : {
             "kind" : "SCALAR",
@@ -9020,7 +9020,7 @@
           },
           "defaultValue" : null
         }, {
-          "name" : "squarePaymentId",
+          "name" : "paypalCaptureId",
           "description" : null,
           "type" : {
             "kind" : "SCALAR",
@@ -12113,7 +12113,7 @@
           },
           "defaultValue" : null
         }, {
-          "name" : "squareCheckoutId",
+          "name" : "paypalOrderId",
           "description" : null,
           "type" : {
             "kind" : "INPUT_OBJECT",
@@ -12122,7 +12122,7 @@
           },
           "defaultValue" : null
         }, {
-          "name" : "squarePaymentId",
+          "name" : "paypalCaptureId",
           "description" : null,
           "type" : {
             "kind" : "INPUT_OBJECT",

@@ -6,7 +6,7 @@ const sesClient = new SESClient({ region: "us-east-1" });
 export async function POST(req: Request) {
   try {
     const { clientEmail, professionalEmail, meetingLink, date, time } = await req.json();
-    const isPayment = meetingLink.includes('square.link');
+    const isPayment = meetingLink.includes('/pay?payment=');
 
     const htmlBody = `
       <div style="font-family: sans-serif; background: #001a2c; color: white; padding: 30px; border: 1px solid #00e5ff; border-radius: 10px; max-width: 500px; margin: auto;">

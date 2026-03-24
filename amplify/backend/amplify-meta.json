@@ -72,7 +72,7 @@
           "defaultAuthentication": {
             "authenticationType": "AMAZON_COGNITO_USER_POOLS",
             "userPoolConfig": {
-              "userPoolId": "us-east-1_yEsaEcYp9"
+              "userPoolId": "authtaxmvp4cd85f31"
             }
           },
           "additionalAuthenticationProviders": []
@@ -84,7 +84,7 @@
         "s3TemplateURL": "https://s3.amazonaws.com/amplify-fiskalproject-master-224fb-deployment/amplify-cfn-templates/api/cloudformation-template.json",
         "logicalId": "apitaxmvp"
       },
-      "lastPushTimeStamp": "2026-03-03T20:57:14.248Z",
+      "lastPushTimeStamp": "2026-03-24T15:44:15.981Z",
       "lastPushDirHash": "2JZN+tgDqd6GcH4TdOvdbxtycbs="
     }
   },
@@ -97,7 +97,7 @@
         "BucketName": "fiskal-documents-private224fb-master",
         "Region": "us-east-1"
       },
-      "lastPushTimeStamp": "2026-03-03T20:57:14.248Z",
+      "lastPushTimeStamp": "2026-03-24T15:44:19.512Z",
       "providerMetadata": {
         "s3TemplateURL": "https://s3.amazonaws.com/amplify-fiskalproject-master-224fb-deployment/amplify-cfn-templates/storage/cloudformation-template.json",
         "logicalId": "storagefiskaldocuments"
@@ -122,7 +122,7 @@
         "s3TemplateURL": "https://s3.amazonaws.com/amplify-fiskalproject-master-224fb-deployment/amplify-cfn-templates/function/taxmvpfe99dd4fPostConfirmation-cloudformation-template.json",
         "logicalId": "functiontaxmvpfe99dd4fPostConfirmation"
       },
-      "lastPushTimeStamp": "2026-03-03T20:57:10.910Z",
+      "lastPushTimeStamp": "2026-03-24T15:44:15.988Z",
       "output": {
         "LambdaExecutionRoleArn": "arn:aws:iam::981914209110:role/taxmvpfe99dd4fPostConfirmation-master",
         "Region": "us-east-1",
@@ -148,7 +148,7 @@
         "s3TemplateURL": "https://s3.amazonaws.com/amplify-fiskalproject-master-224fb-deployment/amplify-cfn-templates/function/taxmvpd8e247c7d8e247c7PostConfirmation-cloudformation-template.json",
         "logicalId": "functiontaxmvpd8e247c7d8e247c7PostConfirmation"
       },
-      "lastPushTimeStamp": "2026-03-03T20:57:10.911Z",
+      "lastPushTimeStamp": "2026-03-24T15:44:15.989Z",
       "output": {
         "LambdaExecutionRoleArn": "arn:aws:iam::981914209110:role/taxmvpd8e247c7d8e247c7PostConfirmation-master",
         "Region": "us-east-1",

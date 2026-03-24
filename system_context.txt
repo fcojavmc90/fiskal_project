@@ -13,7 +13,7 @@ Core User Flows
 - Cliente:
   - Completa encuesta fiscal (20 preguntas + adjuntos).
   - Selecciona profesional (ranking básico por palabras clave).
-  - Pago inicial (unlock agenda) vía Square.
+  - Pago inicial (unlock agenda) vía PayPal.
   - Agenda y reserva con el profesional.
   - Dashboard con citas, casos, mensajes y pagos.
 - Profesional:
@@ -49,7 +49,7 @@ Storage
 - Storage requiere Identity Pool válido si se usan credenciales IAM desde frontend.
 
 Payments
-- Square Payment: componente SquarePayment
+- PayPal Payment: componente PayPalPayment
 - Pagos: unlock inicial + pagos 50/50 por caso
 
 Auth (Cognito)
@@ -80,4 +80,4 @@ Notes
 Credentials
 - GitHub user: fcojavmc90.
 - GitHub token file location: Escritorio/github_token.txt.
-- Square access token file location: Escritorio/square_access_token.txt.
+- PayPal credenciales: usar PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET (sandbox por defecto).
