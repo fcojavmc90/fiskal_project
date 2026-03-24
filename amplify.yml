@@ -5,8 +5,8 @@ applications:
       phases:
         preBuild:
           commands:
-            - npm ci
-            - npm install @aws-sdk/client-ssm
+            - npm install --no-audit --no-fund --legacy-peer-deps
+            - npm install @aws-sdk/client-ssm --no-audit --no-fund --legacy-peer-deps
         build:
           commands:
             - npm run build
