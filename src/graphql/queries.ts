@@ -324,6 +324,8 @@ export const getPayment = /* GraphQL */ `query GetPayment($id: ID!) {
     status
     paypalOrderId
     paypalCaptureId
+    squareCheckoutId
+    squarePaymentId
     createdAt
     updatedAt
     __typename
@@ -352,6 +354,8 @@ export const listPayments = /* GraphQL */ `query ListPayments(
       status
       paypalOrderId
       paypalCaptureId
+      squareCheckoutId
+      squarePaymentId
       createdAt
       updatedAt
       __typename
