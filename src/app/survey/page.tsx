@@ -6,6 +6,7 @@ import { uploadData } from '@aws-amplify/storage';
 import { createSurveyResponse } from '../../lib/graphqlClient';
 import { isAuthBypassed } from '../../lib/authBypass';
 import { resolveRole } from '../../lib/profileBootstrap';
+import { ensureAmplifyConfigured } from '../../lib/amplifyClient';
 
 type AnswerMap = Record<string, string>;
 
@@ -46,6 +47,7 @@ export default function SurveyPage() {
   ]), []);
 
   useEffect(() => {
+    ensureAmplifyConfigured();
     const guard = async () => {
       try {
         if (isAuthBypassed()) {
@@ -63,6 +65,9 @@ export default function SurveyPage() {
         setSub(owner);
         const session = await fetchAuthSession();
         setIdentityId(session.identityId ?? '');
+        if (!session?.tokens?.idToken) {
+          throw new Error('Sesión inválida.');
+        }
       } catch {
         router.replace('/');
       }
@@ -119,6 +124,7 @@ export default function SurveyPage() {
       try {
         const session = await fetchAuthSession({ forceRefresh: true });
         const idToken = session?.tokens?.idToken?.toString() ?? undefined;
+        if (!idToken) throw new Error('Sesión expirada. Inicia sesión nuevamente.');
         const res: any = await createSurveyResponse(
           { owner: sub, answersJson: JSON.stringify(payload) },
           idToken

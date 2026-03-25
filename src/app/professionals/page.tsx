@@ -5,6 +5,7 @@ import { listProfessionalProfiles, listSurveyResponsesByOwner } from '../../lib/
 import { parseSurveyAnswers } from '../../lib/survey';
 import { getCurrentUser, fetchAuthSession, fetchUserAttributes } from 'aws-amplify/auth';
 import { isAuthBypassed } from '../../lib/authBypass';
+import { ensureAmplifyConfigured } from '../../lib/amplifyClient';
 
 type ProCard = {
   id: string;
@@ -30,6 +31,7 @@ export default function ProfessionalsPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    ensureAmplifyConfigured();
     let mounted = true;
     const load = async () => {
       try {
@@ -40,6 +42,11 @@ export default function ProfessionalsPage() {
         setError('');
         const { token, owner: resolvedOwner } = await waitForAuthReady();
         if (!mounted) return;
+        if (!token || !resolvedOwner) {
+          setError('Sesión expirada. Inicia sesión nuevamente.');
+          router.replace('/');
+          return;
+        }
         setOwner(resolvedOwner);
         console.log('[professionals] loading profiles for owner:', resolvedOwner);
         const items = await retryListProfessionalProfiles(token);
@@ -96,7 +103,11 @@ export default function ProfessionalsPage() {
         const user = await getCurrentUser();
         const attr = await fetchUserAttributes();
         const resolvedOwner = attr.sub ?? user.userId ?? '';
-        return { token: session?.tokens?.idToken?.toString() ?? null, owner: resolvedOwner };
+        const token = session?.tokens?.idToken?.toString() ?? null;
+        if (!token || !resolvedOwner) {
+          throw new Error('No se pudo recuperar la sesión.');
+        }
+        return { token, owner: resolvedOwner };
       } catch {
         if (attempt === retries - 1) return { token: null, owner: '' };
         await new Promise(resolve => setTimeout(resolve, delayMs));
