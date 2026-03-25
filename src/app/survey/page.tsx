@@ -96,7 +96,11 @@ export default function SurveyPage() {
         localStorage.setItem('fiskal_survey_completed', 'true');
         localStorage.setItem('fiskal_survey_data', JSON.stringify(payload));
         setSurveyCookies();
-        router.push('/professionals/recommended');
+        if (typeof window !== 'undefined') {
+          window.location.assign('/professionals/recommended');
+        } else {
+          router.push('/professionals/recommended');
+        }
         return;
       }
       const uploadedKeys: { key: string; name: string; type: string; identityId?: string }[] = [];
@@ -142,7 +146,11 @@ export default function SurveyPage() {
       localStorage.setItem('fiskal_survey_completed', 'true');
       localStorage.setItem('fiskal_survey_data', JSON.stringify(payload));
       setSurveyCookies();
-      router.push('/professionals/recommended');
+      if (typeof window !== 'undefined') {
+        window.location.assign('/professionals/recommended');
+      } else {
+        router.push('/professionals/recommended');
+      }
     } catch (err: any) {
       console.error('Survey submit error', err);
       alert('Error guardando la encuesta: ' + formatError(err));

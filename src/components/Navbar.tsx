@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 import { fetchUserAttributes, getCurrentUser, signOut } from "aws-amplify/auth";
 import { usePathname, useRouter } from "next/navigation";
 import { isAuthBypassed } from "../lib/authBypass";
@@ -79,8 +79,14 @@ export default function Navbar() {
     }
   };
 
-  const handleProfessionalsClick = () => {
+  const handleProfessionalsClick = (e: MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
     ensureSurveyCookie();
+    if (typeof window !== "undefined") {
+      window.location.assign("/professionals/recommended");
+    } else {
+      router.push("/professionals/recommended");
+    }
   };
 
   return (
