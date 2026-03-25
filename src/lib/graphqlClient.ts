@@ -1,4 +1,5 @@
 import { generateClient } from 'aws-amplify/api';
+import { fetchAuthSession } from 'aws-amplify/auth';
 import { ensureAmplifyConfigured } from './amplifyClient';
 import type { AppointmentStatus, PaymentStatus, PaymentType, ProfessionalAgendaStatus, ProType, UserRole } from '../API';
 
@@ -12,6 +13,16 @@ type SimpleGraphqlClient = {
 };
 
 let client: SimpleGraphqlClient | null = null;
+
+async function resolveUserPoolToken(passed?: string) {
+  if (passed) return passed;
+  try {
+    const session = await fetchAuthSession({ forceRefresh: true });
+    return session?.tokens?.idToken?.toString() ?? null;
+  } catch {
+    return null;
+  }
+}
 
 function getClient() {
   ensureAmplifyConfigured();
@@ -246,9 +257,10 @@ export async function getUserProfileByOwner(owner: string) {
 }
 
 export async function listProfessionalProfiles(authToken?: string) {
+  const token = await resolveUserPoolToken(authToken);
   const res = await getClient().graphql({
     query: listProfessionalProfilesQuery,
-    ...(authToken ? { authMode: "userPool", authToken } : {}),
+    ...(token ? { authMode: "userPool", authToken: token } : {}),
   });
   return res.data?.listProfessionalProfiles?.items ?? [];
 }
@@ -307,10 +319,11 @@ export async function createSurveyResponse(
 }
 
 export async function listSurveyResponsesByOwner(owner: string, authToken?: string) {
+  const token = await resolveUserPoolToken(authToken);
   const res = await getClient().graphql({
     query: listSurveyResponsesQuery,
     variables: { filter: { owner: { eq: owner } } },
-    ...(authToken ? { authMode: "userPool", authToken } : {}),
+    ...(token ? { authMode: "userPool", authToken: token } : {}),
   });
   return res.data?.listSurveyResponses?.items ?? [];
 }
