@@ -188,6 +188,8 @@ type Payment
   amountCents: Int!
   currency: String!
   status: PaymentStatus!
+  paypalOrderId: String
+  paypalCaptureId: String
   squareCheckoutId: String
   squarePaymentId: String
 }
