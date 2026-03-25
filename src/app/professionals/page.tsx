@@ -39,6 +39,12 @@ export default function ProfessionalsPage() {
           setPros([]);
           return;
         }
+        const surveyDone = localStorage.getItem('fiskal_survey_completed') === 'true';
+        const cookieSurvey = document.cookie.split(';').some(c => c.trim().startsWith('fk_has_survey=1'));
+        if (!surveyDone && !cookieSurvey) {
+          router.replace('/survey');
+          return;
+        }
         setError('');
         const { token, owner: resolvedOwner } = await waitForAuthReady();
         if (!mounted) return;
