@@ -89,9 +89,12 @@ export default function HomePage() {
       document.cookie = `fk_has_survey=${surveyDone ? '1' : '0'}; path=/`;
       document.cookie = `fk_paid_initial=${paidInitial ? '1' : '0'}; path=/`;
 
-      if (resolvedRole === 'PRO') router.push('/expert-dashboard');
-      else {
-        router.push('/dashboard-client');
+      if (typeof window !== 'undefined') {
+        const target = resolvedRole === 'PRO' ? '/expert-dashboard' : '/dashboard-client';
+        window.location.assign(target);
+      } else {
+        if (resolvedRole === 'PRO') router.push('/expert-dashboard');
+        else router.push('/dashboard-client');
       }
     } catch (err: any) {
       const msg = err?.message || err?.toString?.() || 'Error desconocido en sesión.';
