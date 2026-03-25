@@ -95,13 +95,18 @@ export default function SurveyPage() {
         const payload = { answers, files: [], submittedAt: new Date().toISOString() };
         localStorage.setItem('fiskal_survey_completed', 'true');
         localStorage.setItem('fiskal_survey_data', JSON.stringify(payload));
-        setSurveyCookies();
-        if (typeof window !== 'undefined') {
-          window.location.assign('/professionals/recommended');
-        } else {
-          router.push('/professionals/recommended');
-        }
-        return;
+      try {
+        await fetch('/api/survey/complete', { method: 'POST' });
+      } catch {
+        // ignore server cookie failure, fallback to client cookie below
+      }
+      setSurveyCookies();
+      if (typeof window !== 'undefined') {
+        window.location.assign('/professionals/recommended');
+      } else {
+        router.push('/professionals/recommended');
+      }
+      return;
       }
       const uploadedKeys: { key: string; name: string; type: string; identityId?: string }[] = [];
       const ownerIdentityId = identityId || (await fetchAuthSession()).identityId || '';
@@ -145,6 +150,11 @@ export default function SurveyPage() {
       }
       localStorage.setItem('fiskal_survey_completed', 'true');
       localStorage.setItem('fiskal_survey_data', JSON.stringify(payload));
+      try {
+        await fetch('/api/survey/complete', { method: 'POST' });
+      } catch {
+        // ignore server cookie failure, fallback to client cookie below
+      }
       setSurveyCookies();
       if (typeof window !== 'undefined') {
         window.location.assign('/professionals/recommended');
