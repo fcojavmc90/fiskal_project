@@ -172,7 +172,7 @@ const createPaymentMutation = /* GraphQL */ `
 
 const updatePaymentMutation = /* GraphQL */ `
   mutation UpdatePayment($input: UpdatePaymentInput!) {
-    updatePayment(input: $input) { id status paypalCaptureId }
+    updatePayment(input: $input) { id status paypalOrderId paypalCaptureId }
   }
 `;
 
@@ -569,6 +569,7 @@ export async function createCaseDocument(input: {
 export async function updatePayment(input: {
   id: string;
   status?: PaymentStatus | null;
+  paypalOrderId?: string | null;
   paypalCaptureId?: string | null;
 }) {
   return getClient().graphql({ query: updatePaymentMutation, variables: { input } });
