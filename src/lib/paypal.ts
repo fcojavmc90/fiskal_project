@@ -1,17 +1,39 @@
 const SANDBOX_BASE = 'https://api-m.sandbox.paypal.com';
 const PROD_BASE = 'https://api-m.paypal.com';
+const RUNTIME_CONFIG_PATH = (() => {
+  try {
+    // In Amplify Hosting, build artifacts are rooted at .next
+    return require('node:path').join(process.cwd(), 'paypal-runtime.json');
+  } catch {
+    return '';
+  }
+})();
+
+function readRuntimeConfig(): { clientId?: string; clientSecret?: string; env?: string } | null {
+  try {
+    if (!RUNTIME_CONFIG_PATH) return null;
+    const fs = require('node:fs');
+    if (!fs.existsSync(RUNTIME_CONFIG_PATH)) return null;
+    const raw = fs.readFileSync(RUNTIME_CONFIG_PATH, 'utf8');
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
 
 export function getPayPalBaseUrl() {
-  const env = process.env.FISKAL_PAYPAL_ENV || process.env.PAYPAL_ENV || 'sandbox';
+  const runtime = readRuntimeConfig();
+  const env = runtime?.env || process.env.FISKAL_PAYPAL_ENV || process.env.PAYPAL_ENV || 'sandbox';
   const isProd = env === 'production';
   return isProd ? PROD_BASE : SANDBOX_BASE;
 }
 
 export async function getPayPalAccessToken() {
-  const clientId = process.env.FISKAL_PAYPAL_CLIENT_ID || process.env.PAYPAL_CLIENT_ID || '';
-  const clientSecret = process.env.FISKAL_PAYPAL_CLIENT_SECRET || process.env.PAYPAL_CLIENT_SECRET || '';
+  const runtime = readRuntimeConfig();
+  const clientId = runtime?.clientId || process.env.FISKAL_PAYPAL_CLIENT_ID || process.env.PAYPAL_CLIENT_ID || '';
+  const clientSecret = runtime?.clientSecret || process.env.FISKAL_PAYPAL_CLIENT_SECRET || process.env.PAYPAL_CLIENT_SECRET || '';
   if (!clientId || !clientSecret) {
-    const env = process.env.FISKAL_PAYPAL_ENV || process.env.PAYPAL_ENV || 'unset';
+    const env = runtime?.env || process.env.FISKAL_PAYPAL_ENV || process.env.PAYPAL_ENV || 'unset';
     const flags = `clientId=${clientId ? '1' : '0'} clientSecret=${clientSecret ? '1' : '0'} env=${env}`;
     throw new Error(`Faltan credenciales de PayPal (${flags})`);
   }

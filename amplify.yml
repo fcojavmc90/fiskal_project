@@ -10,6 +10,7 @@ applications:
         build:
           commands:
             - npm run build
+            - node scripts/write-paypal-runtime.mjs
       artifacts:
         baseDirectory: .next
         files:
