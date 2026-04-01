@@ -97,7 +97,7 @@ export default function Navbar() {
             <>
               <Link href={dashboardHref}>Dashboard</Link>
               {user.role === "CLIENT" && <Link href="/survey">Encuesta</Link>}
-              {user.role === "CLIENT" && hasSurvey && (
+              {user.role === "CLIENT" && (
                 <Link href="/professionals/recommended" onClick={handleProfessionalsClick}>
                   Profesionales
                 </Link>
