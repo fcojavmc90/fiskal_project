@@ -2,15 +2,17 @@ const SANDBOX_BASE = 'https://api-m.sandbox.paypal.com';
 const PROD_BASE = 'https://api-m.paypal.com';
 
 export function getPayPalBaseUrl() {
-  const isProd = (process.env.PAYPAL_ENV || 'sandbox') === 'production';
+  const env = process.env.FISKAL_PAYPAL_ENV || process.env.PAYPAL_ENV || 'sandbox';
+  const isProd = env === 'production';
   return isProd ? PROD_BASE : SANDBOX_BASE;
 }
 
 export async function getPayPalAccessToken() {
-  const clientId = process.env.PAYPAL_CLIENT_ID || '';
-  const clientSecret = process.env.PAYPAL_CLIENT_SECRET || '';
+  const clientId = process.env.FISKAL_PAYPAL_CLIENT_ID || process.env.PAYPAL_CLIENT_ID || '';
+  const clientSecret = process.env.FISKAL_PAYPAL_CLIENT_SECRET || process.env.PAYPAL_CLIENT_SECRET || '';
   if (!clientId || !clientSecret) {
-    const flags = `clientId=${clientId ? '1' : '0'} clientSecret=${clientSecret ? '1' : '0'} env=${process.env.PAYPAL_ENV || 'unset'}`;
+    const env = process.env.FISKAL_PAYPAL_ENV || process.env.PAYPAL_ENV || 'unset';
+    const flags = `clientId=${clientId ? '1' : '0'} clientSecret=${clientSecret ? '1' : '0'} env=${env}`;
     throw new Error(`Faltan credenciales de PayPal (${flags})`);
   }
   const baseUrl = getPayPalBaseUrl();
