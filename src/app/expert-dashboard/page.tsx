@@ -697,12 +697,12 @@ export default function ExpertDashboard() {
         clientEmail = clientProfile?.email || '';
       } catch {}
     }
-    if (clientEmail || proEmail) {
+    if (clientEmail) {
       const payLink = `${window.location.origin}/pay?payment=${encodeURIComponent(paymentId)}`;
       const res = await fetch('/api/send-meeting', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clientEmail, professionalEmail: proEmail, meetingLink: payLink, date: '', time: '' })
+        body: JSON.stringify({ clientEmail, professionalEmail: '', meetingLink: payLink, date: '', time: '' })
       });
       if (!res.ok) {
         const payload = await res.json().catch(() => ({}));
@@ -905,7 +905,10 @@ export default function ExpertDashboard() {
         <h3>Solicitudes de Cita</h3>
         {appointments.length === 0 && <p>No hay citas.</p>}
         <div style={{ display: 'grid', gap: '14px' }}>
-          {appointments.map(appt => (
+          {appointments.map(appt => {
+            const caseForAppt = cases.find(c => c.appointmentId === appt.id);
+            const hasServicePrice = (caseForAppt?.servicePriceCents ?? 0) > 0;
+            return (
             <div key={appt.id} style={{ background: '#003a57', padding: '16px', borderRadius: '10px', border: '1px solid #00e5ff', position: 'relative' }}>
               <button
                 onClick={() => closeAppointment(appt)}
@@ -962,8 +965,20 @@ export default function ExpertDashboard() {
                     Proponer Cambio
                   </button>
                 )}
-                <button onClick={() => sendPaymentLink(appt, PaymentType.SERVICE_50_FIRST)} style={{ background: '#00e5ff', border: 'none', padding: '6px 10px', fontWeight: 'bold', cursor: 'pointer' }}>Enviar 50% Inicial</button>
-                <button onClick={() => sendPaymentLink(appt, PaymentType.SERVICE_50_FINAL)} style={{ background: '#00c2ff', border: 'none', padding: '6px 10px', fontWeight: 'bold', cursor: 'pointer' }}>Enviar 50% Final</button>
+                <button
+                  onClick={() => sendPaymentLink(appt, PaymentType.SERVICE_50_FIRST)}
+                  disabled={!hasServicePrice}
+                  style={{ background: '#00e5ff', border: 'none', padding: '6px 10px', fontWeight: 'bold', cursor: hasServicePrice ? 'pointer' : 'not-allowed', opacity: hasServicePrice ? 1 : 0.5 }}
+                >
+                  Enviar 50% Inicial
+                </button>
+                <button
+                  onClick={() => sendPaymentLink(appt, PaymentType.SERVICE_50_FINAL)}
+                  disabled={!hasServicePrice}
+                  style={{ background: '#00c2ff', border: 'none', padding: '6px 10px', fontWeight: 'bold', cursor: hasServicePrice ? 'pointer' : 'not-allowed', opacity: hasServicePrice ? 1 : 0.5 }}
+                >
+                  Enviar 50% Final
+                </button>
                 <button
                   onClick={async () => {
                     const caseForAppt = cases.find(c => c.appointmentId === appt.id);
@@ -1093,7 +1108,7 @@ export default function ExpertDashboard() {
                 );
               })()}
             </div>
-          ))}
+          )})}
         </div>
       </div>
       {rescheduleOpen && rescheduleTarget && (

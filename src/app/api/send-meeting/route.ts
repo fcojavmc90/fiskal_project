@@ -8,11 +8,12 @@ export async function POST(req: Request) {
     const { clientEmail, professionalEmail, meetingLink, date, time } = await req.json();
     const isPayment = meetingLink.includes('/pay?payment=');
 
+    const eventLabel = isPayment ? 'Pago requerido - Servicio fiscal' : (time || '');
     const htmlBody = `
       <div style="font-family: sans-serif; background: #001a2c; color: white; padding: 30px; border: 1px solid #00e5ff; border-radius: 10px; max-width: 500px; margin: auto;">
         <h2 style="color: #00e5ff; text-align: center;">FISKAL TECH</h2>
         <div style="background: #003a57; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <p><strong>Evento:</strong> ${time}</p>
+          <p><strong>Evento:</strong> ${eventLabel}</p>
           ${!isPayment ? `<p><strong>Fecha:</strong> ${date}</p>` : ''}
         </div>
         <div style="text-align: center;">

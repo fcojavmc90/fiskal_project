@@ -18,6 +18,7 @@ export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<NavUser | null>(null);
+  const [hasSurvey, setHasSurvey] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -49,6 +50,16 @@ export default function Navbar() {
     return () => { mounted = false; };
   }, [pathname]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const cookieSurvey = document.cookie.split(";").some(c => c.trim().startsWith("fk_has_survey=1"));
+      setHasSurvey(cookieSurvey);
+    } catch {
+      setHasSurvey(false);
+    }
+  }, [pathname]);
+
   const handleLogout = async () => {
     try {
       if (!isAuthBypassed()) {
@@ -69,19 +80,8 @@ export default function Navbar() {
   };
 
   const dashboardHref = user?.role === "PRO" ? "/expert-dashboard" : "/dashboard-client";
-  const ensureSurveyCookie = () => {
-    if (typeof window === "undefined") return;
-    try {
-      const surveyDone = localStorage.getItem("fiskal_survey_completed") === "true";
-      document.cookie = `fk_has_survey=${surveyDone ? "1" : "0"}; path=/`;
-    } catch {
-      // ignore
-    }
-  };
-
   const handleProfessionalsClick = (e: MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
-    ensureSurveyCookie();
     if (typeof window !== "undefined") {
       window.location.assign("/professionals/recommended");
     } else {
@@ -92,13 +92,12 @@ export default function Navbar() {
   return (
     <nav className="fk-nav">
       <div className="fk-nav-inner">
-        <div className="fk-brand" />
         <div className="fk-nav-links">
           {user ? (
             <>
               <Link href={dashboardHref}>Dashboard</Link>
               {user.role === "CLIENT" && <Link href="/survey">Encuesta</Link>}
-              {user.role === "CLIENT" && (
+              {user.role === "CLIENT" && hasSurvey && (
                 <Link href="/professionals/recommended" onClick={handleProfessionalsClick}>
                   Profesionales
                 </Link>

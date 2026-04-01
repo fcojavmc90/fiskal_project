@@ -20,6 +20,7 @@ export default function ClientDashboard() {
   const [surveyInfo, setSurveyInfo] = useState<any>(null);
   const [surveyLoading, setSurveyLoading] = useState(false);
   const [surveyError, setSurveyError] = useState('');
+  const [hasSurvey, setHasSurvey] = useState(false);
   const [callModalAppt, setCallModalAppt] = useState<any | null>(null);
   const [callFullscreen, setCallFullscreen] = useState(false);
   const callModalRef = useRef<HTMLDivElement | null>(null);
@@ -71,6 +72,7 @@ export default function ClientDashboard() {
     const load = async () => {
       try {
         if (isAuthBypassed()) {
+          setHasSurvey(false);
           setLoading(false);
           return;
         }
@@ -86,8 +88,9 @@ export default function ClientDashboard() {
         setClientDisplayName(rawName);
         try {
           const surveys = await listSurveyResponsesByOwner(sub, idToken);
-          const localSurveyDone = localStorage.getItem('fiskal_survey_completed') === 'true';
-          setClientSurveyCookies(localSurveyDone || surveys.length > 0);
+          const hasSurveyResponse = surveys.length > 0;
+          setHasSurvey(hasSurveyResponse);
+          setClientSurveyCookies(hasSurveyResponse);
           const items = await listAppointmentsByClient(sub);
           const uniqueAppointments = dedupeByKey(items, (a: any) => {
             if (a?.id) return a.id;
@@ -173,6 +176,7 @@ export default function ClientDashboard() {
       if (isAuthBypassed()) {
         const cached = localStorage.getItem('fiskal_survey_data');
         const payload = cached ? JSON.parse(cached) : null;
+        setHasSurvey(false);
         setSurveyInfo({
           count: payload ? 1 : 0,
           latest: payload ? { createdAt: payload?.submittedAt || '', proOwner: null, id: null } : null,
@@ -191,8 +195,9 @@ export default function ClientDashboard() {
       const surveys = await listSurveyResponsesByOwner(sub, idToken);
       const sorted = [...surveys].sort((a: any, b: any) => (a.createdAt || '').localeCompare(b.createdAt || ''));
       const latest = sorted.pop() ?? null;
-      const localSurveyDone = localStorage.getItem('fiskal_survey_completed') === 'true';
-      setClientSurveyCookies(localSurveyDone || surveys.length > 0);
+      const hasSurveyResponse = surveys.length > 0;
+      setHasSurvey(hasSurveyResponse);
+      setClientSurveyCookies(hasSurveyResponse);
       setSurveyInfo({
         count: surveys.length,
         latest: latest
@@ -373,6 +378,17 @@ export default function ClientDashboard() {
       <Sidebar dashboardHref="/dashboard-client" />
       <div style={{ flex: 1, padding: '40px' }}>
         <h1 style={{ color: '#00e5ff' }}>Dashboard Cliente</h1>
+      {!loading && !authError && !hasSurvey && (
+        <div style={{ marginTop: '12px', background: '#003a57', padding: '12px', borderRadius: '10px', border: '1px solid #00e5ff' }}>
+          <p style={{ margin: 0 }}>Completa la encuesta para ver profesionales disponibles.</p>
+          <button
+            onClick={() => router.push('/survey')}
+            style={{ marginTop: '10px', background: '#00ff88', border: 'none', padding: '8px 12px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '8px' }}
+          >
+            Ir a encuesta
+          </button>
+        </div>
+      )}
       {loading && <p>Cargando...</p>}
       {!loading && authError && (
         <div style={{ marginTop: '12px', background: '#8b1e1e', padding: '10px 12px', borderRadius: '8px' }}>
@@ -527,9 +543,17 @@ export default function ClientDashboard() {
                   {!paymentsLoading && (() => {
                     const casePayments = payments.filter(p => p.caseId === c.id);
                     if (!casePayments.length) return <p>No hay pagos solicitados aún.</p>;
+                    const uniqueByType = new Map();
+                    for (const p of casePayments) {
+                      uniqueByType.set(p.type, p);
+                    }
+                    const orderedTypes = [PaymentType.SERVICE_50_FIRST, PaymentType.SERVICE_50_FINAL];
+                    const displayPayments = orderedTypes
+                      .map(t => uniqueByType.get(t))
+                      .filter(Boolean);
                     return (
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '6px' }}>
-                        {casePayments.map(p => {
+                        {displayPayments.map(p => {
                           const label = p.type === PaymentType.SERVICE_50_FIRST ? 'Pagar 50% inicial' : 'Pagar 50% final';
                           const isPaid = p.status === PaymentStatus.PAID;
                           return (

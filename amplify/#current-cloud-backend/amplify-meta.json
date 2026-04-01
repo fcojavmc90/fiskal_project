@@ -25,8 +25,8 @@
         "AppClientID": "7gqnjuj6gfm30bcc5jqv66ref",
         "AppClientIDWeb": "7gqnjuj6gfm30bcc5jqv66ref",
         "HostedUIDomain": "us-east-1yesaecyp9",
-        "IdentityPoolId": "us-east-1:9286ec46-f0ed-4ddc-a3d2-94c6a7973825",
-        "IdentityPoolName": "taxmvpd8e247c7_identitypool_d8e247c7__master"
+        "IdentityPoolId": "us-east-1:ce1b331f-39ca-4286-886e-0bdd5813b451",
+        "IdentityPoolName": "taxmvp_identitypool_master"
       },
       "frontendAuthConfig": {
         "socialProviders": [],
@@ -84,8 +84,8 @@
         "s3TemplateURL": "https://s3.amazonaws.com/amplify-fiskalproject-master-224fb-deployment/amplify-cfn-templates/api/cloudformation-template.json",
         "logicalId": "apitaxmvp"
       },
-      "lastPushTimeStamp": "2026-03-03T20:57:14.248Z",
-      "lastPushDirHash": "2JZN+tgDqd6GcH4TdOvdbxtycbs="
+      "lastPushTimeStamp": "2026-03-25T20:38:38.889Z",
+      "lastPushDirHash": "Lh0fX4LlTp9S81JOBYj7QV0gvD8="
     }
   },
   "storage": {
@@ -97,7 +97,7 @@
         "BucketName": "fiskal-documents-private224fb-master",
         "Region": "us-east-1"
       },
-      "lastPushTimeStamp": "2026-03-03T20:57:14.248Z",
+      "lastPushTimeStamp": "2026-03-25T20:38:34.587Z",
       "providerMetadata": {
         "s3TemplateURL": "https://s3.amazonaws.com/amplify-fiskalproject-master-224fb-deployment/amplify-cfn-templates/storage/cloudformation-template.json",
         "logicalId": "storagefiskaldocuments"
@@ -122,7 +122,7 @@
         "s3TemplateURL": "https://s3.amazonaws.com/amplify-fiskalproject-master-224fb-deployment/amplify-cfn-templates/function/taxmvpfe99dd4fPostConfirmation-cloudformation-template.json",
         "logicalId": "functiontaxmvpfe99dd4fPostConfirmation"
       },
-      "lastPushTimeStamp": "2026-03-03T20:57:10.910Z",
+      "lastPushTimeStamp": "2026-03-25T20:38:34.588Z",
       "output": {
         "LambdaExecutionRoleArn": "arn:aws:iam::981914209110:role/taxmvpfe99dd4fPostConfirmation-master",
         "Region": "us-east-1",
@@ -148,7 +148,7 @@
         "s3TemplateURL": "https://s3.amazonaws.com/amplify-fiskalproject-master-224fb-deployment/amplify-cfn-templates/function/taxmvpd8e247c7d8e247c7PostConfirmation-cloudformation-template.json",
         "logicalId": "functiontaxmvpd8e247c7d8e247c7PostConfirmation"
       },
-      "lastPushTimeStamp": "2026-03-03T20:57:10.911Z",
+      "lastPushTimeStamp": "2026-03-25T20:38:34.589Z",
       "output": {
         "LambdaExecutionRoleArn": "arn:aws:iam::981914209110:role/taxmvpd8e247c7d8e247c7PostConfirmation-master",
         "Region": "us-east-1",

@@ -39,9 +39,8 @@ export default function ProfessionalsPage() {
           setPros([]);
           return;
         }
-        const surveyDone = localStorage.getItem('fiskal_survey_completed') === 'true';
         const cookieSurvey = document.cookie.split(';').some(c => c.trim().startsWith('fk_has_survey=1'));
-        if (!surveyDone && !cookieSurvey) {
+        if (!cookieSurvey) {
           router.replace('/survey');
           return;
         }
@@ -62,6 +61,19 @@ export default function ProfessionalsPage() {
           try {
             const surveys = await listSurveyResponsesByOwner(resolvedOwner, token ?? undefined);
             console.log('[professionals] listSurveyResponsesByOwner result:', surveys);
+            if (!surveys || surveys.length === 0) {
+              document.cookie = 'fk_has_survey=0; path=/; SameSite=Lax';
+              try {
+                localStorage.removeItem('fiskal_survey_completed');
+                localStorage.removeItem('fiskal_survey_data');
+                localStorage.removeItem('fiskal_survey_last_id');
+                localStorage.removeItem('fiskal_survey_last_created_at');
+              } catch {
+                // ignore
+              }
+              router.replace('/survey');
+              return;
+            }
             const latest = surveys.sort((a: any, b: any) => (a.createdAt || '').localeCompare(b.createdAt || '')).pop();
             const payload = parseSurveyAnswers(latest?.answersJson);
             const answersText = payload ? JSON.stringify(payload.answers ?? payload) : '';

@@ -594,3 +594,30 @@ export async function getPaymentById(id: string) {
   });
   return res.data?.getPayment ?? null;
 }
+
+export async function getPaymentByIdWithToken(id: string, authToken: string) {
+  const res = await getClient().graphql({
+    query: getPaymentQuery,
+    variables: { id },
+    authMode: "userPool",
+    authToken,
+  });
+  return res.data?.getPayment ?? null;
+}
+
+export async function updatePaymentWithToken(
+  input: {
+    id: string;
+    status?: PaymentStatus | null;
+    paypalOrderId?: string | null;
+    paypalCaptureId?: string | null;
+  },
+  authToken: string
+) {
+  return getClient().graphql({
+    query: updatePaymentMutation,
+    variables: { input },
+    authMode: "userPool",
+    authToken,
+  });
+}

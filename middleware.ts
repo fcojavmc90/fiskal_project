@@ -155,7 +155,10 @@ export function middleware(req: NextRequest) {
     if (pathname.startsWith("/expert-dashboard")) return redirect(req, "/dashboard-client");
 
     // 1) Encuesta: el cliente sí puede entrar a /survey
-    // 2) Matching profesionales: permitido aquí; validamos en el cliente para evitar bloqueo por cookies.
+    // 2) Matching profesionales: SOLO si ya completó encuesta.
+    if (pathname.startsWith("/professionals") && !hasSurvey) {
+      return redirect(req, "/survey");
+    }
 
 
     // 3) Agenda/Checkout: SOLO si ya pagó inicial (USD 150)

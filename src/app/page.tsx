@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { createProfessionalProfile, createUserProfile, getProfessionalProfileByOwner, getUserProfileByOwner } from '../lib/graphqlClient';
 import { ProType, UserRole } from '../API';
 import Link from 'next/link';
-import Image from 'next/image';
 import { isAuthBypassed } from '../lib/authBypass';
 import { ensureAmplifyConfigured } from '../lib/amplifyClient';
 import { clearPendingProfile, loadPendingProfile, normalizeRole, roleFromUserProfile } from '../lib/profileBootstrap';
@@ -124,6 +123,9 @@ export default function HomePage() {
     setError('');
     setAuthLoading(true);
     try {
+      if (typeof window !== 'undefined') {
+        document.cookie = 'fk_has_survey=0; path=/; SameSite=Lax';
+      }
       // Clear any stale session that triggers "already a signed in user"
       try {
         await signOut();
@@ -150,7 +152,7 @@ export default function HomePage() {
     <main className="fk-page">
       <div className="fk-card">
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
-          <Image
+          <img
             src="/fiskal-logo.png"
             alt="Fiskal Solutions"
             width={180}
@@ -165,7 +167,12 @@ export default function HomePage() {
               padding: '8px 10px',
               boxShadow: '0 0 12px rgba(255,255,255,0.15)',
             }}
-            priority
+            onError={(e) => {
+              const target = e.currentTarget;
+              if (target.dataset.fallback) return;
+              target.dataset.fallback = '1';
+              target.src = '/brand/fiskal-logo.png';
+            }}
           />
         </div>
         <h1 className="fk-title">Iniciar Sesión</h1>

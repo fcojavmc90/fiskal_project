@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic';
 import { getPaymentById, updatePayment } from '../../lib/graphqlClient';
 import { PaymentStatus, PaymentType } from '../../API';
 import { ensureAmplifyConfigured } from '../../lib/amplifyClient';
+import { fetchAuthSession } from 'aws-amplify/auth';
 
 const PayPalPayment = dynamic(() => import('../../components/PayPalPayment'), { ssr: false });
 
@@ -17,6 +18,7 @@ function PayPageInner() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [payment, setPayment] = useState<any | null>(null);
+  const [authToken, setAuthToken] = useState('');
 
   useEffect(() => {
     const load = async () => {
@@ -26,6 +28,8 @@ function PayPageInner() {
         return;
       }
       try {
+        const session = await fetchAuthSession();
+        setAuthToken(session.tokens?.idToken?.toString() ?? '');
         const data = await getPaymentById(paymentId);
         if (!data) {
           setError('Pago no encontrado.');
@@ -68,6 +72,8 @@ function PayPageInner() {
                 amountCents={payment.amountCents}
                 description={label}
                 onSuccess={onSuccess}
+                paymentId={payment.id}
+                authToken={authToken}
               />
             )}
           </>

@@ -2,7 +2,6 @@
 
 import React from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 
 type SidebarProps = {
   dashboardHref: string;
@@ -24,7 +23,7 @@ export default function Sidebar({ dashboardHref }: SidebarProps) {
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
-        <Image
+        <img
           src="/fiskal-logo.png"
           alt="Fiskal Solutions"
           width={160}
@@ -39,7 +38,12 @@ export default function Sidebar({ dashboardHref }: SidebarProps) {
             padding: '6px 8px',
             boxShadow: '0 0 12px rgba(255,255,255,0.15)',
           }}
-          priority
+          onError={(e) => {
+            const target = e.currentTarget;
+            if (target.dataset.fallback) return;
+            target.dataset.fallback = '1';
+            target.src = '/brand/fiskal-logo.png';
+          }}
         />
       </div>
       <nav style={{ display: 'grid', gap: '10px' }}>
