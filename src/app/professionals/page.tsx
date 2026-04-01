@@ -39,11 +39,6 @@ export default function ProfessionalsPage() {
           setPros([]);
           return;
         }
-        const cookieSurvey = document.cookie.split(';').some(c => c.trim().startsWith('fk_has_survey=1'));
-        if (!cookieSurvey) {
-          router.replace('/survey');
-          return;
-        }
         setError('');
         const { token, owner: resolvedOwner } = await waitForAuthReady();
         if (!mounted) return;
@@ -53,13 +48,45 @@ export default function ProfessionalsPage() {
           return;
         }
         setOwner(resolvedOwner);
+        const ensureSurvey = async () => {
+          try {
+            const surveys = await listSurveyResponsesByOwner(resolvedOwner, token ?? undefined);
+            if (!surveys || surveys.length === 0) {
+              document.cookie = 'fk_has_survey=0; path=/; SameSite=Lax';
+              try {
+                localStorage.removeItem('fiskal_survey_completed');
+                localStorage.removeItem('fiskal_survey_data');
+                localStorage.removeItem('fiskal_survey_last_id');
+                localStorage.removeItem('fiskal_survey_last_created_at');
+              } catch {
+                // ignore
+              }
+              router.replace('/survey');
+              return null;
+            }
+            // set server-side cookies to keep middleware in sync
+            try {
+              await fetch('/api/session/sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ role: 'client', hasSurvey: true, paidInitial: false }),
+              });
+            } catch {}
+            document.cookie = 'fk_has_survey=1; path=/; SameSite=Lax';
+            return surveys;
+          } catch (err) {
+            console.error('Error verificando encuesta:', err);
+            return null;
+          }
+        };
         console.log('[professionals] loading profiles for owner:', resolvedOwner);
         const items = await retryListProfessionalProfiles(token);
         console.log('[professionals] listProfessionalProfiles result:', items);
         let scored = items as ProCard[];
         if (resolvedOwner) {
           try {
-            const surveys = await listSurveyResponsesByOwner(resolvedOwner, token ?? undefined);
+            const surveys = await ensureSurvey();
+            if (!surveys) return;
             console.log('[professionals] listSurveyResponsesByOwner result:', surveys);
             if (!surveys || surveys.length === 0) {
               document.cookie = 'fk_has_survey=0; path=/; SameSite=Lax';
