@@ -41,6 +41,7 @@ export default function ChimeCall({ appointmentId, role, token, embedded, fullHe
   const [localPos, setLocalPos] = useState({ x: 16, y: 16 });
   const startedRef = useRef(false);
   const recreateAttemptRef = useRef(false);
+  const ensureAttemptRef = useRef(false);
 
   const stopMediaTracks = () => {
     const elements = [localVideoRef.current, remoteVideoRef.current, audioRef.current];
@@ -111,22 +112,78 @@ export default function ChimeCall({ appointmentId, role, token, embedded, fullHe
           setError("Falta el ID de la cita.");
           return;
         }
-        const appointment: any = await getAppointmentById(appointmentId);
+        let appointment: any = await getAppointmentById(appointmentId);
         if (!appointment) {
           setError("No se encontró la cita.");
           return;
         }
-        const meetingDataRaw = appointment.meetingData;
-        const meetingData = typeof meetingDataRaw === "string" ? JSON.parse(meetingDataRaw) : meetingDataRaw;
-        const attendeeId = role === "pro" ? appointment.proAttendeeId : appointment.clientAttendeeId;
-        const joinToken = role === "pro" ? appointment.proJoinToken : appointment.clientJoinToken;
+        const ensureMeetingReady = async () => {
+          if (ensureAttemptRef.current) return null;
+          ensureAttemptRef.current = true;
+          logDebug("Reunión sin datos, creando...");
+          const res = await fetch("/api/chime/meeting", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              appointmentId: appointment.id,
+              clientOwner: appointment.clientOwner,
+              proOwner: appointment.proOwner,
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            if (data?.error === "Missing Chime credentials") {
+              logDebug(`Credenciales: accessKey=${data?.hasAccessKey} secretKey=${data?.hasSecretKey} region=${data?.hasRegion} lambdaUrl=${data?.hasLambdaUrl}`);
+            } else if (data?.usingLambda !== undefined) {
+              logDebug(`Chime backend: usingLambda=${data?.usingLambda} lambdaUrl=${data?.hasLambdaUrl}`);
+              if (data?.lambdaStatus || data?.lambdaBody) {
+                logDebug(`Lambda status=${data?.lambdaStatus || "?"} body=${String(data?.lambdaBody || "").slice(0, 200)}`);
+              }
+            }
+            throw new Error(data?.error || "No se pudo crear la reunión.");
+          }
+          await updateAppointment({
+            id: appointment.id,
+            meetingId: data.meetingId,
+            meetingRegion: data.meetingRegion,
+            meetingData: data.meetingData ? JSON.stringify(data.meetingData) : null,
+            clientAttendeeId: data.clientAttendeeId,
+            proAttendeeId: data.proAttendeeId,
+            clientJoinToken: data.clientJoinToken,
+            proJoinToken: data.proJoinToken,
+          } as any);
+          appointment = {
+            ...appointment,
+            meetingId: data.meetingId,
+            meetingRegion: data.meetingRegion,
+            meetingData: data.meetingData,
+            clientAttendeeId: data.clientAttendeeId,
+            proAttendeeId: data.proAttendeeId,
+            clientJoinToken: data.clientJoinToken,
+            proJoinToken: data.proJoinToken,
+          };
+          logDebug("Reunión creada y guardada.");
+          return data;
+        };
+
+        let meetingDataRaw = appointment.meetingData;
+        let meetingData = typeof meetingDataRaw === "string" ? JSON.parse(meetingDataRaw) : meetingDataRaw;
+        let attendeeId = role === "pro" ? appointment.proAttendeeId : appointment.clientAttendeeId;
+        let joinToken = role === "pro" ? appointment.proJoinToken : appointment.clientJoinToken;
+
+        if (!meetingData || !attendeeId || !joinToken) {
+          const data = await ensureMeetingReady();
+          meetingData = data?.meetingData ?? meetingData;
+          attendeeId = role === "pro" ? data?.proAttendeeId : data?.clientAttendeeId;
+          joinToken = role === "pro" ? data?.proJoinToken : data?.clientJoinToken;
+        }
 
         if (!meetingData || !attendeeId || !joinToken) {
           setError("La reunión no está lista aún.");
           return;
         }
         if (token && token !== joinToken) {
-          setError("Token inválido para esta reunión.");
+          setError("Link de reunión expirado. Solicita un nuevo enlace.");
           return;
         }
 
@@ -267,7 +324,25 @@ export default function ChimeCall({ appointmentId, role, token, embedded, fullHe
           audioVideo.startLocalVideoTile();
         };
 
-        await initSession(meetingData, attendeeId, joinToken);
+        try {
+          await initSession(meetingData, attendeeId, joinToken);
+        } catch (initErr: any) {
+          logDebug(`Init falló: ${initErr?.message || "desconocido"}`);
+          if (!recreateAttemptRef.current) {
+            recreateAttemptRef.current = true;
+            setStatus("Recreando reunión...");
+            const data = await ensureMeetingReady();
+            const nextAttendeeId = role === "pro" ? data?.proAttendeeId : data?.clientAttendeeId;
+            const nextJoinToken = role === "pro" ? data?.proJoinToken : data?.clientJoinToken;
+            if (data?.meetingData && nextAttendeeId && nextJoinToken) {
+              await initSession(data.meetingData, nextAttendeeId, nextJoinToken);
+            } else {
+              throw initErr;
+            }
+          } else {
+            throw initErr;
+          }
+        }
         if (mounted) setStatus("Conectado");
       } catch (err: any) {
         setError(err?.message || "No se pudo iniciar la llamada.");
