@@ -431,14 +431,6 @@ export default function ChimeCall({ appointmentId, role, token, embedded, fullHe
       {!embedded && <h1 style={{ color: "#00e5ff" }}>Videollamada</h1>}
       {error && <p style={{ color: "#ffb4b4" }}>{error}</p>}
       {!error && <p style={{ color: "#9adfff" }}>{status}</p>}
-      {debugLines.length > 0 && (
-        <div style={{ marginTop: "10px", background: "#001426", border: "1px solid #004b6e", padding: "8px 10px", borderRadius: "8px", fontSize: "12px" }}>
-          {debugLines.map((line, idx) => (
-            <div key={`${line}-${idx}`} style={{ color: "#8fd3ff", whiteSpace: "pre-wrap" }}>{line}</div>
-          ))}
-        </div>
-      )}
-
       <div
         ref={videoWrapRef}
         style={{
@@ -451,6 +443,30 @@ export default function ChimeCall({ appointmentId, role, token, embedded, fullHe
           overflow: "hidden",
         }}
       >
+        {debugLines.length > 0 && (
+          <div
+            style={{
+              position: "absolute",
+              top: 10,
+              left: 10,
+              right: 10,
+              maxHeight: "120px",
+              overflowY: "auto",
+              background: "rgba(0, 20, 38, 0.9)",
+              border: "1px solid #004b6e",
+              padding: "8px 10px",
+              borderRadius: "8px",
+              fontSize: "12px",
+              zIndex: 2,
+            }}
+          >
+            {debugLines.map((line, idx) => (
+              <div key={`${line}-${idx}`} style={{ color: "#8fd3ff", whiteSpace: "pre-wrap" }}>
+                {line}
+              </div>
+            ))}
+          </div>
+        )}
         <video
           ref={remoteVideoRef}
           style={{ width: "100%", height: "100%", objectFit: "cover" }}
