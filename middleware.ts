@@ -165,7 +165,7 @@ export function middleware(req: NextRequest) {
 
     // 3) Agenda/Checkout: SOLO si ya pagó inicial (USD 150)
     //    Nota: si además quieres forzar "seleccionó profesional", hazlo por cookie/flag adicional en el futuro.
-    if ((pathname.startsWith("/agenda") || pathname.startsWith("/checkout")) && !paidInitial) {
+    if (pathname.startsWith("/agenda") && !paidInitial) {
       // Si no pagó, lo mandamos al listado de profesionales (pero si no hizo encuesta, irá a /survey arriba)
       return redirect(req, "/professionals");
     }
