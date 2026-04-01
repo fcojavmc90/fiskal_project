@@ -42,9 +42,12 @@ export default function ProfessionalsPage() {
         setError('');
         const { token, owner: resolvedOwner } = await waitForAuthReady();
         if (!mounted) return;
-        if (!token || !resolvedOwner) {
-          setError('Sesión expirada. Inicia sesión nuevamente.');
-          router.replace('/');
+        if (!resolvedOwner) {
+          setError('No se pudo identificar tu sesión. Refresca la página.');
+          return;
+        }
+        if (!token) {
+          setError('Sesión no disponible. Refresca la página o vuelve a iniciar sesión.');
           return;
         }
         setOwner(resolvedOwner);
@@ -141,10 +144,10 @@ export default function ProfessionalsPage() {
     };
   }, []);
 
-  async function waitForAuthReady(retries = 6, delayMs = 400): Promise<{ token: string | null; owner: string }> {
+  async function waitForAuthReady(retries = 8, delayMs = 500): Promise<{ token: string | null; owner: string }> {
     for (let attempt = 0; attempt < retries; attempt += 1) {
       try {
-        const session = await fetchAuthSession({ forceRefresh: true });
+        const session = await fetchAuthSession({ forceRefresh: attempt > 1 });
         const user = await getCurrentUser();
         const attr = await fetchUserAttributes();
         const resolvedOwner = attr.sub ?? user.userId ?? '';
