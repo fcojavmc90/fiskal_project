@@ -22,6 +22,17 @@ export default function SurveyPage() {
     document.cookie = 'fk_has_survey=1; path=/; SameSite=Lax';
     document.cookie = 'fk_role=client; path=/; SameSite=Lax';
   };
+  const syncSurveyCookies = async () => {
+    try {
+      await fetch('/api/session/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: 'client', hasSurvey: true, paidInitial: false }),
+      });
+    } catch {
+      // best-effort
+    }
+  };
 
   const questions = useMemo(() => ([
     { id: 'q1', label: '¿Cuál es el número de la carta o aviso? (Ej: CP2000, CP14, Letter 3219, LTR 504)', type: 'text' },
@@ -97,6 +108,7 @@ export default function SurveyPage() {
         localStorage.setItem('fiskal_survey_data', JSON.stringify(payload));
       try {
         await fetch('/api/survey/complete', { method: 'POST' });
+        await syncSurveyCookies();
       } catch {
         // ignore server cookie failure, fallback to client cookie below
       }
@@ -152,6 +164,7 @@ export default function SurveyPage() {
       localStorage.setItem('fiskal_survey_data', JSON.stringify(payload));
       try {
         await fetch('/api/survey/complete', { method: 'POST' });
+        await syncSurveyCookies();
       } catch {
         // ignore server cookie failure, fallback to client cookie below
       }

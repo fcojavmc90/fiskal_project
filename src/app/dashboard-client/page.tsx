@@ -50,6 +50,18 @@ export default function ClientDashboard() {
     document.cookie = `fk_has_survey=${hasSurvey ? '1' : '0'}; path=/; SameSite=Lax`;
     document.cookie = 'fk_role=client; path=/; SameSite=Lax';
   };
+  const syncSessionCookies = async (hasSurveyValue: boolean) => {
+    try {
+      const paidInitial = typeof window !== 'undefined' && localStorage.getItem('fiskal_paid_initial') === 'true';
+      await fetch('/api/session/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: 'client', hasSurvey: hasSurveyValue, paidInitial }),
+      });
+    } catch {
+      // best-effort
+    }
+  };
 
   useEffect(() => {
     if (!callModalAppt) return;
@@ -91,6 +103,7 @@ export default function ClientDashboard() {
           const hasSurveyResponse = surveys.length > 0;
           setHasSurvey(hasSurveyResponse);
           setClientSurveyCookies(hasSurveyResponse);
+          await syncSessionCookies(hasSurveyResponse);
           const items = await listAppointmentsByClient(sub);
           const uniqueAppointments = dedupeByKey(items, (a: any) => {
             if (a?.id) return a.id;
@@ -198,6 +211,7 @@ export default function ClientDashboard() {
       const hasSurveyResponse = surveys.length > 0;
       setHasSurvey(hasSurveyResponse);
       setClientSurveyCookies(hasSurveyResponse);
+      await syncSessionCookies(hasSurveyResponse);
       setSurveyInfo({
         count: surveys.length,
         latest: latest
