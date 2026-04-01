@@ -450,21 +450,19 @@ export default function ChimeCall({ appointmentId, role, token, embedded, fullHe
               top: 10,
               left: 10,
               right: 10,
-              maxHeight: "120px",
-              overflowY: "auto",
+              height: "24px",
+              overflow: "hidden",
               background: "rgba(0, 20, 38, 0.9)",
               border: "1px solid #004b6e",
-              padding: "8px 10px",
+              padding: "3px 10px",
               borderRadius: "8px",
               fontSize: "12px",
               zIndex: 2,
             }}
           >
-            {debugLines.map((line, idx) => (
-              <div key={`${line}-${idx}`} style={{ color: "#8fd3ff", whiteSpace: "pre-wrap" }}>
-                {line}
-              </div>
-            ))}
+            <div style={{ color: "#8fd3ff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {debugLines[debugLines.length - 1]}
+            </div>
           </div>
         )}
         <video
