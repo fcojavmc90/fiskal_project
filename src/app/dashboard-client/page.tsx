@@ -334,16 +334,16 @@ export default function ClientDashboard() {
     try {
       await updateAppointment({ id: appt.id, status: AppointmentStatus.CANCELLED });
       const slotId = (appt.notes || '').split('slotId:')[1]?.trim();
-      if (slotId && proOwner) {
-        const slots = await listAgendaByProfessional(proOwner);
-        const related = slots.find((s: any) => s.id === slotId);
-        if (related) {
+      if (slotId) {
+        try {
           await updateProfessionalAgenda({
-            id: related.id,
+            id: slotId,
             status: ProfessionalAgendaStatus.AVAILABLE,
             clientId: null,
             meetingLink: null,
           });
+        } catch (err) {
+          console.warn('No se pudo liberar agenda del profesional:', err);
         }
       }
       clearSurveyCache();
