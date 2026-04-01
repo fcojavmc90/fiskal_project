@@ -114,9 +114,9 @@ export default function SurveyPage() {
       }
       setSurveyCookies();
       if (typeof window !== 'undefined') {
-        window.location.assign('/professionals/recommended');
+        window.location.assign('/professionals');
       } else {
-        router.push('/professionals/recommended');
+        router.push('/professionals');
       }
       return;
       }
@@ -170,9 +170,9 @@ export default function SurveyPage() {
       }
       setSurveyCookies();
       if (typeof window !== 'undefined') {
-        window.location.assign('/professionals/recommended');
+        window.location.assign('/professionals');
       } else {
-        router.push('/professionals/recommended');
+        router.push('/professionals');
       }
     } catch (err: any) {
       console.error('Survey submit error', err);

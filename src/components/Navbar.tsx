@@ -83,9 +83,9 @@ export default function Navbar() {
   const handleProfessionalsClick = (e: MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     if (typeof window !== "undefined") {
-      window.location.assign("/professionals/recommended");
+      window.location.assign("/professionals");
     } else {
-      router.push("/professionals/recommended");
+      router.push("/professionals");
     }
   };
 
@@ -98,7 +98,7 @@ export default function Navbar() {
               <Link href={dashboardHref}>Dashboard</Link>
               {user.role === "CLIENT" && <Link href="/survey">Encuesta</Link>}
               {user.role === "CLIENT" && (
-                <Link href="/professionals/recommended" onClick={handleProfessionalsClick}>
+                <Link href="/professionals" onClick={handleProfessionalsClick}>
                   Profesionales
                 </Link>
               )}

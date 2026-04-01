@@ -84,7 +84,7 @@
         "s3TemplateURL": "https://s3.amazonaws.com/amplify-fiskalproject-master-224fb-deployment/amplify-cfn-templates/api/cloudformation-template.json",
         "logicalId": "apitaxmvp"
       },
-      "lastPushTimeStamp": "2026-03-25T20:38:38.889Z",
+      "lastPushTimeStamp": "2026-04-01T02:41:00.514Z",
       "lastPushDirHash": "Lh0fX4LlTp9S81JOBYj7QV0gvD8="
     }
   },
@@ -97,7 +97,7 @@
         "BucketName": "fiskal-documents-private224fb-master",
         "Region": "us-east-1"
       },
-      "lastPushTimeStamp": "2026-03-25T20:38:34.587Z",
+      "lastPushTimeStamp": "2026-04-01T02:40:33.697Z",
       "providerMetadata": {
         "s3TemplateURL": "https://s3.amazonaws.com/amplify-fiskalproject-master-224fb-deployment/amplify-cfn-templates/storage/cloudformation-template.json",
         "logicalId": "storagefiskaldocuments"
@@ -122,7 +122,7 @@
         "s3TemplateURL": "https://s3.amazonaws.com/amplify-fiskalproject-master-224fb-deployment/amplify-cfn-templates/function/taxmvpfe99dd4fPostConfirmation-cloudformation-template.json",
         "logicalId": "functiontaxmvpfe99dd4fPostConfirmation"
       },
-      "lastPushTimeStamp": "2026-03-25T20:38:34.588Z",
+      "lastPushTimeStamp": "2026-04-01T02:40:29.770Z",
       "output": {
         "LambdaExecutionRoleArn": "arn:aws:iam::981914209110:role/taxmvpfe99dd4fPostConfirmation-master",
         "Region": "us-east-1",
@@ -148,7 +148,7 @@
         "s3TemplateURL": "https://s3.amazonaws.com/amplify-fiskalproject-master-224fb-deployment/amplify-cfn-templates/function/taxmvpd8e247c7d8e247c7PostConfirmation-cloudformation-template.json",
         "logicalId": "functiontaxmvpd8e247c7d8e247c7PostConfirmation"
       },
-      "lastPushTimeStamp": "2026-03-25T20:38:34.589Z",
+      "lastPushTimeStamp": "2026-04-01T02:40:29.771Z",
       "output": {
         "LambdaExecutionRoleArn": "arn:aws:iam::981914209110:role/taxmvpd8e247c7d8e247c7PostConfirmation-master",
         "Region": "us-east-1",

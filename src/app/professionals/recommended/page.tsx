@@ -1,7 +1,14 @@
 "use client";
 
-import ProfessionalsPage from "../page";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
-export default function RecommendedProfessionalsPage() {
-  return <ProfessionalsPage />;
+export default function ProfessionalsRecommendedRedirect() {
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace("/professionals");
+  }, [router]);
+
+  return null;
 }
