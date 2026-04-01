@@ -65,12 +65,18 @@ function isPublicPath(pathname: string) {
   return false;
 }
 
+function hasPathPrefix(pathname: string, prefix: string) {
+  if (!pathname.startsWith(prefix)) return false;
+  if (pathname.length === prefix.length) return true;
+  return pathname[prefix.length] === "/";
+}
+
 function isProtectedPath(pathname: string) {
   // Protegidas por defecto
   return (
     pathname.startsWith("/client") ||
-    pathname.startsWith("/pro") ||
-    pathname.startsWith("/professional") ||
+    hasPathPrefix(pathname, "/pro") ||
+    hasPathPrefix(pathname, "/professional") ||
     pathname.startsWith("/survey") ||
     pathname.startsWith("/agenda") ||
     pathname.startsWith("/checkout") ||
@@ -136,8 +142,8 @@ export function middleware(req: NextRequest) {
     if (pathname.startsWith("/dashboard-client")) return redirect(req, "/expert-dashboard");
 
     // Permitido: /professional/*
-    if (pathname.startsWith("/professional")) return NextResponse.next();
-    if (pathname.startsWith("/pro")) return NextResponse.next();
+    if (hasPathPrefix(pathname, "/professional")) return NextResponse.next();
+    if (hasPathPrefix(pathname, "/pro")) return NextResponse.next();
     if (pathname.startsWith("/expert-dashboard")) return NextResponse.next();
 
     // Cualquier otra protegida -> /professional
@@ -149,8 +155,8 @@ export function middleware(req: NextRequest) {
   // ====== ROL: CLIENTE ======
   if (role === "client") {
     // Prohibido: pantallas de profesional
-    if (pathname.startsWith("/pro")) return redirect(req, "/dashboard-client");
-    if (pathname.startsWith("/professional")) return redirect(req, "/dashboard-client");
+    if (hasPathPrefix(pathname, "/pro")) return redirect(req, "/dashboard-client");
+    if (hasPathPrefix(pathname, "/professional")) return redirect(req, "/dashboard-client");
     if (pathname.startsWith("/expert-dashboard")) return redirect(req, "/dashboard-client");
 
     // 1) Encuesta: el cliente sí puede entrar a /survey
