@@ -10,7 +10,8 @@ export async function getPayPalAccessToken() {
   const clientId = process.env.PAYPAL_CLIENT_ID || '';
   const clientSecret = process.env.PAYPAL_CLIENT_SECRET || '';
   if (!clientId || !clientSecret) {
-    throw new Error('Faltan credenciales de PayPal');
+    const flags = `clientId=${clientId ? '1' : '0'} clientSecret=${clientSecret ? '1' : '0'} env=${process.env.PAYPAL_ENV || 'unset'}`;
+    throw new Error(`Faltan credenciales de PayPal (${flags})`);
   }
   const baseUrl = getPayPalBaseUrl();
   const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
