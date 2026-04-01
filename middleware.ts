@@ -72,7 +72,6 @@ function isProtectedPath(pathname: string) {
     pathname.startsWith("/pro") ||
     pathname.startsWith("/professional") ||
     pathname.startsWith("/survey") ||
-    pathname.startsWith("/professionals") ||
     pathname.startsWith("/agenda") ||
     pathname.startsWith("/checkout") ||
     pathname.startsWith("/case") ||
