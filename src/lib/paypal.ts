@@ -1,21 +1,29 @@
 const SANDBOX_BASE = 'https://api-m.sandbox.paypal.com';
 const PROD_BASE = 'https://api-m.paypal.com';
-const RUNTIME_CONFIG_PATH = (() => {
+const RUNTIME_CONFIG_PATHS = (() => {
   try {
-    // In Amplify Hosting, build artifacts are rooted at .next
-    return require('node:path').join(process.cwd(), 'paypal-runtime.json');
+    const path = require('node:path');
+    const cwd = process.cwd();
+    return [
+      path.join(cwd, 'paypal-runtime.json'),
+      path.join(cwd, '.next', 'paypal-runtime.json'),
+    ];
   } catch {
-    return '';
+    return [] as string[];
   }
 })();
 
 function readRuntimeConfig(): { clientId?: string; clientSecret?: string; env?: string } | null {
   try {
-    if (!RUNTIME_CONFIG_PATH) return null;
+    if (!RUNTIME_CONFIG_PATHS.length) return null;
     const fs = require('node:fs');
-    if (!fs.existsSync(RUNTIME_CONFIG_PATH)) return null;
-    const raw = fs.readFileSync(RUNTIME_CONFIG_PATH, 'utf8');
-    return JSON.parse(raw);
+    for (const p of RUNTIME_CONFIG_PATHS) {
+      if (fs.existsSync(p)) {
+        const raw = fs.readFileSync(p, 'utf8');
+        return JSON.parse(raw);
+      }
+    }
+    return null;
   } catch {
     return null;
   }
